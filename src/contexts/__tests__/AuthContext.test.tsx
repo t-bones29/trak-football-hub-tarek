@@ -53,7 +53,9 @@ function client(shared: boolean, accessToken?: () => Promise<string>) {
       maybeSingle: () => api.lookup(id),
     }) }) }),
     rpc: async (name: string, payload: unknown) => api.provision((await current())?.user.id, name, payload),
-    functions: { invoke: async (name: string) => api.invite((await current())?.user.id, name) },
+    // Options are forwarded, not dropped: F-5's fix lives in the request BODY,
+    // and a mock that discards it lets a caller silently stop binding the send.
+    functions: { invoke: async (name: string, options?: unknown) => api.invite((await current())?.user.id, name, options) },
   }
 }
 
@@ -304,6 +306,18 @@ describe('account-bound onboarding and auth lifecycle', () => {
     await waitFor(() => expect(api.provision).toHaveBeenCalled())
     await waitFor(() => expect(api.warning).toHaveBeenCalledWith(expect.stringContaining("couldn't email"), expect.any(Object)))
     expect(screen.getByTestId('identity')).toHaveTextContent('a:a')
+  })
+
+  // F-5. The handler narrows to the caller's own invite whose address matches
+  // parent_email, but still accepts a body-less call for compatibility — so if
+  // this caller ever stops sending the address, the unbound "any active invite"
+  // path returns and nothing else would notice. Proven: dropping the body
+  // passed all 666 tests before this assertion existed.
+  it('binds the invite send to the parent address this signup supplied', async () => {
+    api.session = session('a', { ...pending('A'), parent_email: 'guardian-a@example.test' })
+    mount()
+    await waitFor(() => expect(api.invite).toHaveBeenCalled())
+    expect(api.invite).toHaveBeenCalledWith('a', 'send-parent-invite', { body: { parent_email: 'guardian-a@example.test' } })
   })
 
   it('keeps new signup metadata on the returned account rather than browser-global storage', async () => {
