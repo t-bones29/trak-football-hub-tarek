@@ -143,7 +143,8 @@ async function run() {
 }
 
 let before
-if (['partial-rerun', 'backfill', 'extra-roster', 'duplicate-roster', 'legacy-linked', 'ambiguous-fixtures', 'limited-consent', 'draft-feedback', 'unrelated-notes'].includes(scenario)) {
+let foreign = null
+if (['partial-rerun', 'backfill', 'extra-roster', 'duplicate-roster', 'legacy-linked', 'foreign-linked', 'ambiguous-fixtures', 'limited-consent', 'draft-feedback', 'unrelated-notes'].includes(scenario)) {
   enforceConsent = false
   await run()
   enforceConsent = true
@@ -169,6 +170,17 @@ if (['partial-rerun', 'backfill', 'extra-roster', 'duplicate-roster', 'legacy-li
     rows('profiles').push({ user_id: user.id, role: 'player', full_name: legacy.player_name })
     legacy.linked_player_id = user.id
     rows('coach_assessments').push({ id: uid('legacy-assessment'), squad_player_id: legacy.id, coach_user_id: legacy.coach_user_id, created_at: '2026-09-04T15:00:00Z' })
+  }
+  // A REAL account (not the rehearsal domain) linked to an intended roster
+  // slot, e.g. a real child who joined a rehearsal coach with the TRK code.
+  // The seed must stop before writing anything into that child's record.
+  if (scenario === 'foreign-linked') {
+    const slot = rows('squad_players').find(row => !row.linked_player_id)
+    const user = { id: uid('foreign'), email: 'real.child@example.test' }
+    accounts.set(user.email, user)
+    rows('profiles').push({ user_id: user.id, role: 'player', full_name: slot.player_name })
+    slot.linked_player_id = user.id
+    foreign = { user: user.id, slot: slot.id }
   }
   if (scenario === 'ambiguous-fixtures') {
     const fixture = rows('coach_calendar_events')[0]
@@ -197,4 +209,4 @@ const rerun = result.exitCode === 0 || scenario === 'interrupted' ? await run() 
 const recovered = counts()
 const thirdRun = scenario === 'interrupted' ? await run() : null
 const latest = target && rows('coach_assessments').filter(row => row.squad_player_id === target.id).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
-console.log(JSON.stringify({ ...result, logs: result.logs.filter(line => !line.includes(password)), before, after, recovered, thirdRun: thirdRun && { exitCode: thirdRun.exitCode }, final: counts(), rerun: rerun && { exitCode: rerun.exitCode }, targetAssessmentCount: target ? rows('coach_assessments').filter(row => row.squad_player_id === target.id).length : null, targetFeedback: !!latest && rows('coach_shared_feedback').some(row => row.assessment_id === latest.id && row.published_at != null), draftPreserved: !!latest && rows('coach_shared_feedback').some(row => row.assessment_id === latest.id && row.published_at === null && row.body === 'Unpublished synthetic draft'), unrelatedDraftPreserved: rows('coach_shared_feedback').some(row => row.id === 'unrelated-draft' && row.published_at === null && row.body === 'Unrelated draft stays private'), unrelatedPublished: rows('coach_shared_feedback').filter(row => row.assessment_id === 'unrelated-assessment').length, unrelatedNotePreserved: rows('coach_assessment_notes').some(row => row.id === 'unrelated-private-note' && row.note === 'Private synthetic note outside required fixtures'), signupAttempts: attempts.get(`andreas.papadakis@${domain}`), playerAccounts: rows('profiles').filter(row => row.role === 'player').length }))
+console.log(JSON.stringify({ ...result, logs: result.logs.filter(line => !line.includes(password)), before, after, recovered, thirdRun: thirdRun && { exitCode: thirdRun.exitCode }, final: counts(), rerun: rerun && { exitCode: rerun.exitCode }, targetAssessmentCount: target ? rows('coach_assessments').filter(row => row.squad_player_id === target.id).length : null, targetFeedback: !!latest && rows('coach_shared_feedback').some(row => row.assessment_id === latest.id && row.published_at != null), draftPreserved: !!latest && rows('coach_shared_feedback').some(row => row.assessment_id === latest.id && row.published_at === null && row.body === 'Unpublished synthetic draft'), unrelatedDraftPreserved: rows('coach_shared_feedback').some(row => row.id === 'unrelated-draft' && row.published_at === null && row.body === 'Unrelated draft stays private'), unrelatedPublished: rows('coach_shared_feedback').filter(row => row.assessment_id === 'unrelated-assessment').length, unrelatedNotePreserved: rows('coach_assessment_notes').some(row => row.id === 'unrelated-private-note' && row.note === 'Private synthetic note outside required fixtures'), signupAttempts: attempts.get(`andreas.papadakis@${domain}`), playerAccounts: rows('profiles').filter(row => row.role === 'player').length, foreignWrites: foreign && { consents: rows('parental_consents').filter(row => row.player_user_id === foreign.user).length, matches: rows('matches').filter(row => row.user_id === foreign.user).length, assessments: rows('coach_assessments').filter(row => row.squad_player_id === foreign.slot).length } }))

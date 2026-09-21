@@ -19,6 +19,7 @@ interface SeedResult {
   unrelatedNotePreserved: boolean
   signupAttempts: number
   playerAccounts: number
+  foreignWrites: { consents: number; matches: number; assessments: number } | null
 }
 function run(scenario: string): SeedResult {
   return JSON.parse(execFileSync(process.execPath, ['--experimental-vm-modules', 'scripts/testing/rehearsal-seed-fixture.mjs', scenario], {
@@ -80,6 +81,15 @@ describe('actual rehearsal seed CLI with synthetic authenticated Supabase respon
     expect(result.after.matches).toBe(80)
     expect(result.rerun?.exitCode).toBe(0)
     expect(result.final).toEqual(result.after)
+  })
+  // The line the readiness doc draws: the seed fabricates consent and history
+  // only for synthetic children. A real account on a rehearsal roster (a real
+  // child who joined with the TRK code) must stop the run before any write.
+  it('stops without writing anything into a real account linked to a rehearsal roster slot', () => {
+    const result = run('foreign-linked')
+    expect(result.exitCode).toBe(1)
+    expect(result.done).toBe(false)
+    expect(result.foreignWrites).toEqual({ consents: 0, matches: 0, assessments: 0 })
   })
   it('rejects limited standing consent without overwriting the guardian choices', () => {
     const result = run('limited-consent')
