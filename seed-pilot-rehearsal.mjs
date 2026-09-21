@@ -471,6 +471,35 @@ async function seed() {
     }
     log(`matches: ${created.matches}, assessments: ${created.assessments}`)
 
+    /* Latest-assessment notes, backfilled. The loop above is skipped once the
+       coach has any assessment, so the lastF note only lands on a FRESH seed.
+       The live rehearsal academy already had 78 assessments on 21 Sep with a
+       note on the latest one for 0 of 28 players (read-only count), so without
+       this the "player sees coach feedback" step shows nothing to anyone.
+       PlayerHome shows feedback for the latest assessment only; give each
+       claimed player's latest one a note if it has none. Runs on every pass,
+       before publishing, so these notes are published below too. */
+    for (let n = 0; n < claimed.length; n++) {
+      const r = claimed[n]
+      const { data: latest, error: latestErr } = await supabase
+        .from('coach_assessments').select('id')
+        .eq('coach_user_id', coach.id).eq('squad_player_id', r.id)
+        .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (latestErr) { log(`latest assessment for ${r.player_name}: ${latestErr.message}`); continue }
+      if (!latest) continue
+      const { data: hasNote, error: hasNoteErr } = await supabase
+        .from('coach_assessment_notes').select('assessment_id').eq('assessment_id', latest.id).maybeSingle()
+      if (hasNoteErr) { log(`note lookup for ${r.player_name}: ${hasNoteErr.message}`); continue }
+      if (hasNote) continue
+      const { error: nErr } = await supabase.from('coach_assessment_notes').insert({
+        assessment_id: latest.id,
+        coach_user_id: coach.id,
+        note: pick(COACH_NOTES, n),
+      })
+      if (nErr) log(`latest note for ${r.player_name}: ${nErr.message}`)
+      else created.notes++
+    }
+
     /* Shared feedback. K9 (#44) made coach_assessment_notes coach-private, so
        the player and parent screens now read coach_shared_feedback. Publish
        one for every assessment that carries a note and has none yet, or the
