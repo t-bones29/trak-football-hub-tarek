@@ -146,6 +146,24 @@ describe('academy dashboard correctness and recovery', () => {
     expect(within(card).queryByText('E', { exact: true }), detail).not.toBeInTheDocument()
   })
 
+  // ClubSquads selects no created_at and keeps the FIRST row per player as the
+  // latest, so the requested order is the only thing making "newest wins" true
+  // on that screen. The test above pins it for /club/home only; reversing the
+  // Squads order passed all 23 tests and showed each player's oldest band.
+  it('uses the newest assessment for the squads band even when natural database order is oldest-first', async () => {
+    const older = assessment('older-exceptional', 9, '2026-09-01T10:00:00Z')
+    const newer = assessment('newer-good', 7, '2026-09-20T10:00:00Z')
+    let requestedOrder: string | null = null
+    server.use(http.get(endpoint('coach_assessments'), ({ request }) => {
+      requestedOrder = new URL(request.url).searchParams.get('order')
+      return HttpResponse.json(requestedOrder?.includes('created_at.desc') ? [newer, older] : [older, newer])
+    }))
+    await loadRoute('/club/squads', 'matches')
+    const detail = `${observed()}; coach_assessments order=${requestedOrder ?? '<absent>'}`
+    expect.soft(screen.queryByText('Good'), detail).toBeInTheDocument()
+    expect(screen.queryByText('Exceptional'), detail).not.toBeInTheDocument()
+  })
+
   it('includes zero in the home distribution when it moves Exceptional down to Standout', async () => {
     server.use(table('coach_assessments', [{ ...assessment('with-zero', 10, '2026-09-20T10:00:00Z'), work_rate: 0 }]))
     await loadRoute('/club/home', 'coach_assessments')
