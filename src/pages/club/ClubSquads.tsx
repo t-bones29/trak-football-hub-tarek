@@ -83,6 +83,17 @@ export default function ClubSquads() {
 
       const coachIds = [...new Set(squadData.filter(s => s.coach_user_id).map(s => s.coach_user_id!))]
 
+      // The header's coach count is the academy's coaches, the same query Home
+      // uses, not the coaches who happen to have roster rows. Counting from the
+      // roster showed "2 Coaches" here and "3 Coaches" on Home for the same
+      // academy (a goalkeeping coach with no players yet is still a coach).
+      const { data: academyCoaches, error: academyCoachError } = await supabase
+        .from('coach_details')
+        .select('user_id')
+        .abortSignal(signal)
+      if (signal.aborted) return
+      if (academyCoachError) throw academyCoachError
+
       // Fetch coach names
       const coachNameMap: Record<string, string> = {}
       if (coachIds.length > 0) {
@@ -162,7 +173,7 @@ export default function ClubSquads() {
 
       setOrphanedPlayers(orphaned)
       setPlayers(active)
-      setCoachCount(coachIds.length)
+      setCoachCount((academyCoaches ?? []).length)
 
       // Collect unique age groups for filter
       const groups = ['All', ...Array.from(new Set(rows.map(r => r.ageGroup).filter(g => g !== '—'))).sort()]

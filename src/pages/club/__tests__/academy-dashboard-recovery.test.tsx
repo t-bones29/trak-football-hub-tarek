@@ -164,6 +164,24 @@ describe('academy dashboard correctness and recovery', () => {
     expect(screen.queryByText('Exceptional'), detail).not.toBeInTheDocument()
   })
 
+  // Found on production (rehearsal director, 22 Sep): the same academy header
+  // read "3 Coaches" on Home and "2 Coaches" on Squads, because Squads counted
+  // coaches with roster rows while Home counted the academy's coaches. A coach
+  // with no players yet (a goalkeeping coach, a new hire) is still a coach.
+  it('reports the same coach count on Home and Squads when a coach has no players yet', async () => {
+    const withRosterlessCoach = table('coach_details', [
+      { user_id: COACH, current_club: 'Synthetic Academy', team: 'U15 test squad', coach_role: 'Head Coach' },
+      { user_id: 'academy-gk-coach-test', current_club: 'Synthetic Academy', team: 'U15 test squad', coach_role: 'Goalkeeping Coach' },
+    ])
+    server.use(withRosterlessCoach)
+    await loadRoute('/club/home', 'coach_assessments')
+    expect(screen.getByText('2 Coaches'), observed()).toBeInTheDocument()
+    cleanup()
+    server.use(withRosterlessCoach)
+    await loadRoute('/club/squads', 'matches')
+    expect(screen.getByText('2 Coaches'), observed()).toBeInTheDocument()
+  })
+
   it('includes zero in the home distribution when it moves Exceptional down to Standout', async () => {
     server.use(table('coach_assessments', [{ ...assessment('with-zero', 10, '2026-09-20T10:00:00Z'), work_rate: 0 }]))
     await loadRoute('/club/home', 'coach_assessments')
@@ -262,7 +280,10 @@ describe('academy dashboard correctness and recovery', () => {
       await screen.findByText(route === '/club/home'
         ? 'No coaches connected yet. Share your academy code with coaches to get started.' : 'No players found.')
       const callsAfterNextLoad = [...downstreamAccounts]
-      expect(callsAfterNextLoad).toEqual([nextAdmin])
+      // Every downstream read belongs to the new account (Squads makes two:
+      // its roster and the academy's coach count). None from the old one.
+      expect(callsAfterNextLoad.length).toBeGreaterThan(0)
+      expect(callsAfterNextLoad.filter(account => account !== nextAdmin)).toEqual([])
 
       await act(async () => { release(); await oldReply })
       await waitFor(() => expect(oldReleased).toBe(true))
