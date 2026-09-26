@@ -6,7 +6,8 @@ import { formatParentDate } from '@/lib/parent-data'
 /* TRAK-76 (J6): the trainings a child was recorded at, from
    family_training_history(): date, focus labels and their own attendance.
    Nothing else about a session reaches a family (Kostas, TRAK-6, 25 Sep).
-   The parent screen can reuse this with the selected child's id. */
+   The parent screen (TRAK-77) uses it with the selected child's id and its
+   own wording for a child who is waiting for approval. */
 
 type Row = { session_id: string; session_date: string; focus: string[] | null; attendance: string }
 type State =
@@ -17,7 +18,10 @@ type State =
 
 const ATTENDANCE: Record<string, string> = { present: 'Present', late: 'Late', absent: 'Absent' }
 
-export function TrainingHistory({ playerUserId, reloadOn }: { playerUserId: string; reloadOn?: unknown }) {
+export function TrainingHistory({
+  playerUserId, reloadOn,
+  waitingText = 'Your training history appears once your parent approves.',
+}: { playerUserId: string; reloadOn?: unknown; waitingText?: string }) {
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [retrying, setRetrying] = useState(false)
   // Only the newest request may write: a slow earlier one must not replace it.
@@ -53,7 +57,7 @@ export function TrainingHistory({ playerUserId, reloadOn }: { playerUserId: stri
         <LoadError what="your training" retrying={retrying} onRetry={() => { setRetrying(true); void load() }} />
       )}
       {state.kind === 'awaiting_consent' && (
-        <p className="text-[13px] text-white/60">Your training history appears once your parent approves.</p>
+        <p className="text-[13px] text-white/60">{waitingText}</p>
       )}
       {state.kind === 'ready' && state.rows.length === 0 && (
         <p className="text-[13px] text-white/60">No training recorded yet.</p>

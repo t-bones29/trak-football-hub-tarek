@@ -2,6 +2,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { MobileShell, NavBar } from '@/components/trak'
 import { ParentChildSelector, ParentFamilyContent, ParentLoadError, ParentLoading, ParentRating } from '@/components/parent/ParentFamily'
 import { useParentMatches } from '@/hooks/useParentData'
+import { useParentChildren } from '@/contexts/ParentChildrenContext'
+import { TrainingHistory } from '@/components/player/TrainingHistory'
 import { formatParentDate, matchResult } from '@/lib/parent-data'
 
 export default function ParentMatches() {
@@ -9,6 +11,7 @@ export default function ParentMatches() {
   const location = useLocation()
   const query = useParentMatches()
   const matches = query.data ?? []
+  const { selectedChild } = useParentChildren()
   return (
     <MobileShell>
       <div className="pt-3 pb-4">
@@ -33,6 +36,9 @@ export default function ParentMatches() {
                     </div>
                   </div>)}
                 </div>}
+          {/* J6 (TRAK-77): the training the coach logged for this child. */}
+          {selectedChild && <TrainingHistory playerUserId={selectedChild.id}
+            waitingText="Training appears once you approve this child." />}
         </ParentFamilyContent>
       </div>
       <NavBar role="parent" activeTab={location.pathname} onNavigate={navigate} />

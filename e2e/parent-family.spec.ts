@@ -24,6 +24,8 @@ await context.route('**/*',async route=>{
  if(u.pathname==='/auth/v1/logout') return logoutFails?json({msg:'Synthetic logout failure'},500):route.fulfill({status:204});
  if(u.pathname==='/rest/v1/telemetry_events') return json(null,201);
  if(u.pathname==='/rest/v1/rpc/get_children_awaiting_consent') return json([]);
+ // TRAK-77: Matches also lists the selected child's training (a read, over POST).
+ if(u.pathname==='/rest/v1/rpc/family_training_history') return json([]);
  if(u.pathname==='/rest/v1/player_parent_links') return failLinks?json({message:'Synthetic network error'},503):json([{player_user_id:alex},{player_user_id:zara}]);
  if(u.pathname==='/rest/v1/profiles') {
    const filter=u.searchParams.get('user_id')||'';
@@ -76,5 +78,5 @@ await context.route('**/*',async route=>{
  await page.screenshot({path:testInfo.outputPath('connections-mobile.png'),fullPage:true});
  expect(errors).toEqual([]);
  expect(unexpected).toEqual([]);
- expect(writes.every(write => ['/rest/v1/telemetry_events', '/rest/v1/rpc/get_children_awaiting_consent', '/auth/v1/logout'].includes(write.path))).toBe(true);
+ expect(writes.every(write => ['/rest/v1/telemetry_events', '/rest/v1/rpc/get_children_awaiting_consent', '/rest/v1/rpc/family_training_history', '/auth/v1/logout'].includes(write.path))).toBe(true);
 });
