@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { MobileShell, NavBar, MatchCard, LoadError } from '@/components/trak'
 import { scoreToBand } from '@/lib/rating-engine'
+import { TrainingHistory } from '@/components/player/TrainingHistory'
 
 const FILTERS = ['All', 'League', 'Cup', 'Friendly']
 const PAGE_SIZE = 20
@@ -159,6 +160,9 @@ export default function PlayerMatches() {
             </button>
           </>
         )}
+
+        {/* J6: the training the coach logged (TRAK-76). */}
+        {user && <TrainingHistory playerUserId={user.id} reloadOn={user} />}
       </div>
       <NavBar role="player" activeTab={location.pathname} onNavigate={navigate} />
     </MobileShell>

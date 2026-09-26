@@ -6,7 +6,14 @@ import { MobileShell, BandPill, MetadataLabel, NavBar, LoadError } from '@/compo
 import { scoreToBand } from '@/lib/rating-engine'
 import { ChevronLeft } from 'lucide-react'
 
-export default function PlayerMatchDetail() {
+/* Also the parent's match detail (TRAK-73): `role` picks the nav and the way
+   back, and `limitedFor` says whether a child's match shows only what the
+   parent already saw on their list (score, opponent, competition, venue, band). */
+export default function PlayerMatchDetail({ role = 'player', limitedFor }: {
+  role?: 'player' | 'parent'
+  limitedFor?: (childId: string) => boolean
+}) {
+  const matchesPath = `/${role}/matches`
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -53,16 +60,17 @@ export default function PlayerMatchDetail() {
         ) : (
           <p className="text-center text-[13px] text-white/70" role="status">This match is unavailable.</p>
         )}
-        <button onClick={() => navigate('/player/matches')}
+        <button onClick={() => navigate(matchesPath)}
           className="flex items-center gap-2 mx-auto px-4 py-2 rounded-[10px] text-[12px] text-white/70 border border-white/[0.07]">
           <ChevronLeft size={14} />
           Back to matches
         </button>
       </div>
-      <NavBar role="player" activeTab="/player/matches" onNavigate={navigate} />
+      <NavBar role={role} activeTab={matchesPath} onNavigate={navigate} />
     </MobileShell>
   )
 
+  const limited = limitedFor?.(match.user_id) ?? false
   const band = scoreToBand(match.computed_rating || 6.5)
   const resultLabel = match.team_score > match.opponent_score ? 'W'
     : match.team_score < match.opponent_score ? 'L' : 'D'
@@ -114,9 +122,11 @@ export default function PlayerMatchDetail() {
           {[
             { label: 'Competition', value: match.competition },
             { label: 'Venue', value: match.venue },
-            { label: 'Position', value: match.position },
-            { label: 'Age Group', value: match.age_group },
-            { label: 'Minutes', value: `${match.minutes_played}'` },
+            ...(limited ? [] : [
+              { label: 'Position', value: match.position },
+              { label: 'Age Group', value: match.age_group },
+              { label: 'Minutes', value: `${match.minutes_played}'` },
+            ]),
           ].map(row => (
             <div key={row.label} className="flex items-center justify-between">
               <span className="text-[11px] text-white/35" style={{ fontFamily: "'DM Mono', monospace" }}>
@@ -128,7 +138,7 @@ export default function PlayerMatchDetail() {
         </div>
 
         {/* Goal contributions */}
-        <div className="grid grid-cols-2 gap-2">
+        {!limited && <div className="grid grid-cols-2 gap-2">
           {[
             { label: 'Goals', value: match.goals ?? 0 },
             { label: 'Assists', value: match.assists ?? 0 },
@@ -141,10 +151,10 @@ export default function PlayerMatchDetail() {
                 style={{ fontFamily: "'DM Mono', monospace" }}>{stat.label}</span>
             </div>
           ))}
-        </div>
+        </div>}
 
       </div>
-      <NavBar role="player" activeTab="/player/matches" onNavigate={navigate} />
+      <NavBar role={role} activeTab={matchesPath} onNavigate={navigate} />
     </MobileShell>
   )
 }

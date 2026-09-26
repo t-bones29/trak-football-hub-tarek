@@ -107,6 +107,25 @@ INSERT INTO public.roster_guardians (roster_child_id, email, loaded_by) VALUES
   (pg_temp.rs(50), 'guardian@roster-signup.test',  'fixture'),
   (pg_temp.rs(52), 'guardian@roster-signup.test',  'fixture'),
   (pg_temp.rs(50), 'guardian2@roster-signup.test', 'fixture');
+-- The coach's personal player-link code, as coach home used to show it (section 7).
+UPDATE public.profiles SET invite_code = 'RSC1' WHERE user_id = pg_temp.rs(2);
+
+-- Expects a plain permission refusal (SQLSTATE 42501, any wording): a revoked
+-- grant or a row-level policy, rather than the admission message above.
+CREATE FUNCTION pg_temp.rs_denied(statement text, description text) RETURNS void
+LANGUAGE plpgsql AS $test$
+DECLARE ok boolean := false; failure text;
+BEGIN
+  BEGIN
+    EXECUTE statement;
+    failure := 'unexpectedly allowed';
+  EXCEPTION
+    WHEN insufficient_privilege THEN ok := true;
+    WHEN OTHERS THEN failure := SQLSTATE || ': ' || SQLERRM;
+  END;
+  INSERT INTO pg_temp.rs_results VALUES (description, ok, failure);
+END;
+$test$;
 
 CREATE FUNCTION pg_temp.rs_player(p_name text, p_dob text) RETURNS text LANGUAGE sql AS $test$
   SELECT format($$SELECT public.provision_my_profile(jsonb_build_object('role', 'player', 'full_name', %L,
@@ -184,6 +203,40 @@ RESET ROLE;
 SELECT pg_temp.rs_check(NOT EXISTS (SELECT 1 FROM auth.users WHERE id = pg_temp.rs(16))
   AND NOT EXISTS (SELECT 1 FROM public.roster_children WHERE id = pg_temp.rs(52)),
   '6 the account and its admission are gone');
+
+-- ── 7. The roster is the only way into a squad (slice 4) ──────────────────
+-- No linking by a coach's code, and no coach creating squad rows: a child is
+-- in a squad only because the operator admitted them.
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.rs_as(pg_temp.rs(15));
+SELECT pg_temp.rs_denied($$SELECT public.link_player_to_coach('TRK-RSC1')$$,
+  '7 J1 an existing player account cannot join a squad with a coach''s code');
+SELECT pg_temp.rs_denied($$SELECT public.get_coach_id_by_invite_code('RSC1')$$,
+  '7 J1 a coach''s code cannot be looked up');
+-- The side door: provisioning used to call link_player_to_coach itself (as its
+-- owner) when the payload carried a code. Signup still succeeds; it must not link.
+SELECT pg_temp.rs_allowed($$SELECT public.provision_my_profile(jsonb_build_object('role', 'player', 'full_name', 'Legacy Player',
+    'coach_invite_code', 'TRK-RSC1', 'player_details', jsonb_build_object('position', 'Forward')))$$,
+  '7 CONTROL an existing player repeats signup with a coach code in the payload');
+SELECT pg_temp.rs_as(pg_temp.rs(10));
+SELECT pg_temp.rs_denied($$SELECT public.link_player_to_coach('TRK-RSC1')$$,
+  '7 J1 a rostered child cannot use a code either');
+SELECT pg_temp.rs_as(pg_temp.rs(2));
+SELECT pg_temp.rs_denied(format($$INSERT INTO public.squad_players (coach_user_id, player_name, age_group) VALUES (%L, 'Direct Insert', 'U14')$$, pg_temp.rs(2)),
+  '7 UC-C02 a coach cannot add a squad row');
+SELECT pg_temp.rs_denied(format($$INSERT INTO public.squad_players (id, coach_user_id, player_name) VALUES (%L, %L, 'Upserted') ON CONFLICT (id) DO UPDATE SET player_name = excluded.player_name$$, pg_temp.rs(44), pg_temp.rs(2)),
+  '7 UC-C02 a coach cannot upsert a squad row');
+SELECT pg_temp.rs_allowed(format($$UPDATE public.squad_players SET shirt_number = 7 WHERE id = %L$$, pg_temp.rs(43)),
+  '7 CONTROL the coach still edits their own squad row');
+RESET ROLE;
+SELECT pg_temp.rs_check((SELECT shirt_number = 7 FROM public.squad_players WHERE id = pg_temp.rs(43))
+  AND NOT EXISTS (SELECT 1 FROM public.squad_players WHERE player_name IN ('Direct Insert', 'Upserted') OR linked_player_id = pg_temp.rs(15)),
+  '7 the edit landed, and nothing refused above created or linked a squad row');
+SET LOCAL ROLE service_role;
+SELECT pg_temp.rs_allowed(format($$SELECT public.admit_roster_child(%L, %L, 'Operator Admitted', 'U14', '2012-02-02', 'operator.child@roster-signup.test', ARRAY['operator.guardian@roster-signup.test'], 'fixture')$$,
+  pg_temp.rs(30), pg_temp.rs(2)),
+  '7 CONTROL the operator''s roster load still creates the squad row');
+RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true);
 
 -- ── Report ─────────────────────────────────────────────────────────────────
@@ -191,8 +244,8 @@ DO $test$
 DECLARE failed integer; total integer;
 BEGIN
   SELECT count(*) FILTER (WHERE NOT passed), count(*) INTO failed, total FROM pg_temp.rs_results;
-  IF total <> 22 THEN
-    RAISE EXCEPTION 'Roster signup admission: % assertions ran; expected exactly 22', total;
+  IF total <> 31 THEN
+    RAISE EXCEPTION 'Roster signup admission: % assertions ran; expected exactly 31', total;
   END IF;
   IF failed > 0 THEN
     RAISE EXCEPTION 'Roster signup admission: % of % failed: %', failed, total,

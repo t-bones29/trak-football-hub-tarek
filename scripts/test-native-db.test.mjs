@@ -98,7 +98,7 @@ test('academy upgrade preserves dependencies before the older repair and its for
   }
   assert.equal(stages[stages.indexOf(pilot) - 1], 'pilot_view_backfill_setup.sql');
   assert.deepEqual(suites, ['parent_invite_security.sql', 'pilot_view_security.sql',
-    'privilege_and_consent_security.sql', 'coach_notes_privacy.sql', 'org_referential_cleanup.sql', 'account_export.sql', 'pilot_g7.sql', 'avatar_storage.sql',
+    'privilege_and_consent_security.sql', 'coach_notes_privacy.sql', 'org_referential_cleanup.sql', 'account_export.sql', 'pilot_g7.sql', 'avatar_storage.sql', 'family_training_history.sql',
     'coach_departure_review.sql', 'academy_access_security.sql',
     'account_deletion_setup.sql', 'account_deletion_assertions.sql']);
   assert.match(sql, /deployed main first, then academy repair/);
@@ -124,7 +124,7 @@ test('assessment upgrade applies current main, academy repair, then the unchange
   assert.equal(replayed.indexOf('20260917205027_secure_parent_invites.sql'),
     replayed.indexOf('20260918070209_restrict_pilot_operational_views.sql') + 1);
   assert.deepEqual(suites, ['parent_invite_security.sql', 'pilot_view_security.sql',
-    'privilege_and_consent_security.sql', 'coach_notes_privacy.sql', 'org_referential_cleanup.sql', 'account_export.sql', 'pilot_g7.sql', 'avatar_storage.sql',
+    'privilege_and_consent_security.sql', 'coach_notes_privacy.sql', 'org_referential_cleanup.sql', 'account_export.sql', 'pilot_g7.sql', 'avatar_storage.sql', 'family_training_history.sql',
     'coach_departure_review.sql', 'academy_access_security.sql',
     'account_deletion_setup.sql', 'account_deletion_assertions.sql']);
   assert.match(sql, /deployed main first, then academy repair and forward corrections, then assessment index/);

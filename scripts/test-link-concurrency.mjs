@@ -121,7 +121,8 @@ try {
       SET application_name='trak_link_race_${index}';
       BEGIN;
       SET LOCAL statement_timeout='15s';
-      SET LOCAL ROLE authenticated;
+      -- TRAK-48 slice 4: app roles can no longer call link_player_to_coach; the
+      -- race is still exercised, as the owner, with each player's identity.
       SELECT set_config('request.jwt.claims','{"sub":"${uid(player)}","role":"authenticated"}',true);
       SELECT public.link_player_to_coach('TRK-RACE01');
       COMMIT;

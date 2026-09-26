@@ -4,7 +4,7 @@ import { useCase } from '../../support/use-case'
 import { renderApp } from '../../support/render-app'
 import { signInAs } from '../../support/session'
 import { server } from '../../msw/server'
-import { table, tableError } from '../../msw/supabase'
+import { rpc, table, tableError } from '../../msw/supabase'
 import { http, HttpResponse } from 'msw'
 import { SUPABASE_URL } from '../../msw/supabase'
 
@@ -16,6 +16,9 @@ function signedInAthlete() {
     table('profiles', [
       { id: 'p-athlete', user_id: ATHLETE.id, role: 'player', full_name: 'Nikos Papadopoulos', nationality: 'GR' },
     ]),
+    // The Matches screen also lists training (TRAK-76); none here, so the
+    // match assertions stay about matches.
+    rpc('family_training_history', () => []),
   )
 }
 

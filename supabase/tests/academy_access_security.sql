@@ -178,8 +178,13 @@ WHERE user_id = (current_setting('trak.saved_claims')::jsonb->>'sub')::uuid;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', current_setting('trak.saved_claims'), true);
 SELECT set_config('request.jwt.claims', json_build_object('sub', pg_temp.academy_id(9), 'role', 'authenticated')::text, true);
+-- TRAK-48 slice 4: app roles can no longer call link_player_to_coach (refused
+-- in roster_signup_admission section 7). Its adoption logic is still asserted
+-- here, run as the function owner with the player's identity in the claims.
+RESET ROLE;
 SELECT pg_temp.academy_assert(public.link_player_to_coach('TRK-ACCA08') = pg_temp.academy_id(22), 'player adopts existing independent roster row');
 SELECT pg_temp.academy_assert(public.link_player_to_coach('TRK-ACCA08') = pg_temp.academy_id(22), 'repeated adoption is idempotent');
+SET LOCAL ROLE authenticated;
 SELECT pg_temp.academy_assert((SELECT count(*) = 1 FROM public.coach_assessments WHERE id = pg_temp.academy_id(31)), 'adoption retains assessment history');
 SELECT set_config('request.jwt.claims', json_build_object('sub', pg_temp.academy_id(1), 'role', 'authenticated')::text, true);
 SELECT pg_temp.academy_assert((SELECT organization_id = pg_temp.academy_id(10) FROM public.squad_players WHERE id = pg_temp.academy_id(22)), 'adopted NULL roster acquires current coach academy');
@@ -227,7 +232,10 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', current_setting('trak.saved_claims'), true);
 SELECT pg_temp.academy_assert((SELECT count(*) = 0 FROM public.coach_assessments WHERE id IN (pg_temp.academy_id(70), pg_temp.academy_id(71))), 'coach cannot read closed history after joining another academy');
 SELECT set_config('request.jwt.claims', json_build_object('sub', pg_temp.academy_id(53), 'role', 'authenticated')::text, true);
+-- TRAK-48 slice 4: as above, the owner runs the link with the player's claims.
+RESET ROLE;
 SELECT pg_temp.academy_assert(public.link_player_to_coach('TRK-ACCA52') <> pg_temp.academy_id(60), 'same-name player gets a fresh row instead of adopting closed academy history');
+SET LOCAL ROLE authenticated;
 SELECT pg_temp.academy_assert((SELECT count(*) = 0 FROM public.coach_assessments WHERE id = pg_temp.academy_id(70)), 'new player does not inherit closed same-name assessment');
 SELECT set_config('request.jwt.claims', json_build_object('sub', pg_temp.academy_id(52), 'role', 'authenticated')::text, true);
 SELECT pg_temp.academy_assert((SELECT count(*) = 0 FROM public.coach_assessments WHERE id IN (pg_temp.academy_id(70), pg_temp.academy_id(71))), 'player RPC does not restore coach access to closed history');

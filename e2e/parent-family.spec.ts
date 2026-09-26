@@ -30,6 +30,12 @@ await context.route('**/*',async route=>{
    const rows=filter===`eq.${parent}`?[profile]:filter.includes(coach)?[{user_id:coach,full_name:'Synthetic Coach'}]:[{user_id:alex,full_name:'Alex Example'},{user_id:zara,full_name:'Zara Example'}];
    return json(req.headers().accept?.includes('vnd.pgrst.object')?rows[0]:rows);
  }
+ if(u.pathname==='/rest/v1/parental_consents' && req.method()==='GET') {
+   expect(u.searchParams.get('parent_user_id')).toBe(`eq.${parent}`);
+   expect([`eq.${alex}`,`eq.${zara}`]).toContain(u.searchParams.get('player_user_id'));
+   expect(u.searchParams.get('withdrawn_at')).toBe('is.null');
+   return json([]);
+ }
  if(u.pathname==='/rest/v1/player_details') return json([{position:'Midfielder',current_club:'Synthetic Academy',age_group:'U15'}]);
  if(u.pathname==='/rest/v1/squad_players') return json([{id:u.searchParams.get('linked_player_id')?.slice(3)}]);
  if(u.pathname==='/rest/v1/coach_assessments') return json([{id:'assessment',created_at:'2026-09-01T12:00:00Z',coach_user_id:coach,coach_rating:0,work_rate:0,tactical:0,attitude:0,technical:0,physical:0,coachability:0}]);

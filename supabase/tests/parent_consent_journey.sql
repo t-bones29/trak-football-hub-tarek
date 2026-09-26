@@ -83,29 +83,28 @@ SELECT public.admit_staff_member(pg_temp.cj(10), 'coach', 'Journey Coach', pg_te
 
 SET LOCAL ROLE authenticated;
 
--- ── 1. The coach joins the academy and adds the player to the roster ────────
+-- ── 1. The coach completes signup in the academy Trak placed them in ───────
 
 SELECT pg_temp.cj_as(pg_temp.cj(10), 'coach@consent-journey.test');
 DO $test$
-DECLARE v_sp uuid; v_code text;
 BEGIN
   PERFORM public.provision_my_profile(jsonb_build_object(
     'role', 'coach', 'full_name', 'Journey Coach',
     'coach_details', jsonb_build_object('academy_code', 'CJRN01', 'current_club', 'Consent Journey FC')));
-  SELECT invite_code INTO v_code FROM public.profiles WHERE user_id = pg_temp.cj(10);
-  PERFORM set_config('trak.cj_code', v_code, true);
-  INSERT INTO public.squad_players (coach_user_id, player_name, status)
-  VALUES (pg_temp.cj(10), 'Omar Synthetic', 'active') RETURNING id INTO v_sp;
-  PERFORM set_config('trak.cj_sp', v_sp::text, true);
-  PERFORM pg_temp.cj_assert(v_sp IS NOT NULL AND coalesce(v_code, '') <> '',
-    '1 the coach has a roster row and a TRK code to give the player');
+  PERFORM pg_temp.cj_assert(EXISTS (SELECT 1 FROM public.coach_details
+      WHERE user_id = pg_temp.cj(10) AND organization_id = pg_temp.cj(100)),
+    '1 the coach is in the academy, ready for the roster');
 END;
 $test$;
 
--- TRAK-48 slice 3: a player or parent profile needs the academy's roster to
--- name them. The operator loads the child (with the coach's roster row) and
+-- TRAK-48 slices 3 and 4: the roster is the only way into a squad. The
+-- operator creates the coach's squad row with the child's roster place, and
 -- the parent the child will name.
 RESET ROLE;
+INSERT INTO public.squad_players (coach_user_id, player_name, status)
+VALUES (pg_temp.cj(10), 'Omar Synthetic', 'active');
+SELECT set_config('trak.cj_sp', (SELECT id::text FROM public.squad_players
+  WHERE coach_user_id = pg_temp.cj(10) AND player_name = 'Omar Synthetic'), true);
 INSERT INTO public.roster_children (organization_id, squad_player_id, date_of_birth, child_email, loaded_by)
 VALUES (pg_temp.cj(100), current_setting('trak.cj_sp')::uuid, (current_date - interval '15 years 2 months')::date,
         'player@consent-journey.test', 'fixture');
@@ -125,9 +124,10 @@ BEGIN
     'parent_email', 'Parent@Consent-Journey.test ',
     'player_details', jsonb_build_object('date_of_birth', (current_date - interval '15 years 2 months')::date::text,
                                          'position', 'Midfielder')));
-  v_sq := public.link_player_to_coach(current_setting('trak.cj_code'));
+  -- Signup claims the roster place and links its squad row (no code step).
+  SELECT id INTO v_sq FROM public.squad_players WHERE linked_player_id = pg_temp.cj(20);
   PERFORM pg_temp.cj_assert(v_sq = current_setting('trak.cj_sp')::uuid,
-    '2 the player joins the roster row the coach created', coalesce(v_sq::text, 'null'));
+    '2 the player joins the roster row the operator loaded', coalesce(v_sq::text, 'null'));
 
   SELECT (public.my_consent_status()->>'age')::integer INTO v_age;
   PERFORM pg_temp.cj_assert(v_age = 15 AND public.consent_threshold_age() = 18,

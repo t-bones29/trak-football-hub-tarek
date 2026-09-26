@@ -157,7 +157,7 @@ test('shared phone switches from player to existing parent on the invitation and
 
   await page.getByRole('button', { name: 'Link Zara Example', exact: true }).click();
   await expect(page).toHaveURL(appOrigin + '/parent/consent');
-  await expect(page.getByRole('heading', { name: "Approve Zara's account", exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Approve Zara Example's account", exact: true })).toBeVisible();
   expect(observed.claims).toEqual([{
     path: '/rest/v1/rpc/accept_parent_invite', method: 'POST',
     authorization: `Bearer ${observed.parent.access_token}`, body: { p_invite_id: zaraInvite },
@@ -248,6 +248,12 @@ async function secondChildFixture(page: Page, context: BrowserContext) {
     // No password/profile writes, provisioning, consent, logout or email calls
     // are permitted. An unexpected request must fail, not silently succeed.
     if (request.method() !== 'GET') return reject();
+    if (url.pathname === '/rest/v1/parental_consents') {
+      if (url.searchParams.get('parent_user_id') !== `eq.${parentId}`
+        || !linked.has((url.searchParams.get('player_user_id') ?? '').slice(3))
+        || url.searchParams.get('withdrawn_at') !== 'is.null') return reject();
+      return json([]);
+    }
     if (url.pathname === '/rest/v1/player_parent_links') {
       if (url.searchParams.get('parent_user_id') !== `eq.${parentId}`) return reject();
       memberships.push({ ids: [...linked], failed: failMembership });

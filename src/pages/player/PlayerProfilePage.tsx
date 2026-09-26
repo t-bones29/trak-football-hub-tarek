@@ -9,7 +9,6 @@ import { trackEvent } from '@/lib/telemetry'
 import { bandForScore } from '@/lib/rating-engine'
 import RatingTrendChart from '@/components/player/RatingTrendChart'
 import { ParentInviteCard } from '@/components/player/ParentInviteCard'
-import { CoachLinkCard } from '@/components/player/CoachLinkCard'
 import { PlayerConnections } from '@/components/player/PlayerConnections'
 
 type TrendFilter = 'last5' | 'last10' | 'all'
@@ -210,9 +209,6 @@ export default function PlayerProfilePage() {
 
         {/* Connections, moved here from Settings (TRAK-71) */}
         <PlayerConnections />
-
-        {/* Coach link: only while not yet linked (the code path until TRAK-48 slice 3) */}
-        <CoachLinkCard hideWhenLinked />
 
         {/* Parent access */}
         <ParentInviteCard />
