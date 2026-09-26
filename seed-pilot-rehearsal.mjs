@@ -276,7 +276,8 @@ async function seed() {
     for (const { i, name } of names) {
       if (i % 2 === 0) {
         const slug = name.toLowerCase().replace(/[^a-z]+/g, '.')
-        // link_player_to_coach is itself idempotent, so re-running is safe.
+        // Since TRAK-48 slice 4 a player joins a squad only through the roster
+        // loader; the rehearsal players are already linked, so re-running is safe.
         const playerUser = await signInOrUp(`${slug}@${DOMAIN}`)
         if (!playerUser) continue
         await provision({
@@ -288,7 +289,6 @@ async function seed() {
             age_group: squad.ageGroup,
             date_of_birth: `${2026 - (squad.ageGroup === 'U15' ? 15 : 17)}-05-12`,
           },
-          coach_invite_code: coachCode,
         })
         created.linked++
       } else {
@@ -305,7 +305,8 @@ async function seed() {
           age_group: squad.ageGroup,
           status: 'active',
         })
-        if (error) log(`roster row "${name}": ${error.message}`)
+        // Since TRAK-48 slice 4 only the roster loader creates squad rows.
+        if (error) log(`roster row "${name}": ${error.message} (load new players with scripts/load-roster.mjs)`)
         else created.unlinked++
       }
     }

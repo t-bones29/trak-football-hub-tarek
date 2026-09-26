@@ -16,7 +16,6 @@ vi.mock('@/hooks/use-avatar-url', () => ({ useAvatarUrl: mocks.avatar }))
 vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn() }))
 vi.mock('@/contexts/ParentChildrenContext', () => ({ useParentChildren: () => ({ children: [], selectedChild: null, loading: false, error: null }) }))
 vi.mock('@/components/player/ParentInviteCard', () => ({ ParentInviteCard: () => null }))
-vi.mock('@/components/player/CoachLinkCard', () => ({ CoachLinkCard: () => null }))
 vi.mock('@/components/player/PlayerConnections', () => ({ PlayerConnections: () => null }))
 
 vi.mock('@/integrations/supabase/client', () => ({
@@ -28,6 +27,9 @@ vi.mock('@/integrations/supabase/client', () => ({
     }
     return query
   } },
+  // Imported at load by the parent consent code the profile now renders (TRAK-13).
+  SUPABASE_FUNCTIONS_URL: 'https://test.supabase.co/functions/v1',
+  SUPABASE_ANON_KEY: 'test-anon-key',
 }))
 beforeEach(() => mocks.avatar.mockClear())
 afterEach(cleanup)

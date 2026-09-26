@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { MobileShell, NavBar } from '@/components/trak'
 import { ParentChildSelector, ParentFamilyContent, ParentLoadError, ParentLoading, ParentRating } from '@/components/parent/ParentFamily'
 import { useParentMatches } from '@/hooks/useParentData'
@@ -22,7 +22,7 @@ export default function ParentMatches() {
             : query.isPending ? <ParentLoading />
               : matches.length === 0 ? <p className="text-sm text-muted-foreground text-center py-12">No matches yet.</p>
                 : <div className="divide-y divide-border">
-                  {matches.map(match => <div key={match.id} className="flex items-center gap-3 py-4">
+                  {matches.map(match => <Link key={match.id} to={`/parent/match/${match.id}`} className="flex items-center gap-3 py-4">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground truncate">{match.opponent || match.competition || 'Match'}</p>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -34,7 +34,7 @@ export default function ParentMatches() {
                       <p className="text-xs text-muted-foreground mt-1">{matchResult(match)
                         ? `${matchResult(match)} ${match.team_score}–${match.opponent_score}` : 'Score not recorded'}</p>
                     </div>
-                  </div>)}
+                  </Link>)}
                 </div>}
           {/* J6 (TRAK-77): the training the coach logged for this child. */}
           {selectedChild && <TrainingHistory playerUserId={selectedChild.id}

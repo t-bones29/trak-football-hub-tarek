@@ -37,6 +37,7 @@ function ParentConsentAccount({ parentId }: { parentId: string }) {
   const [submitting, setSubmitting] = useState(false)
   const [savedFor, setSavedFor] = useState<string | null>(null)
   const [draft, setDraft] = useState<ApprovalDraft | null>(null)
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
   const mounted = useRef(false)
   const reading = useRef<AbortController | null>(null)
   const writing = useRef<AbortController | null>(null)
@@ -76,7 +77,7 @@ function ParentConsentAccount({ parentId }: { parentId: string }) {
     }
   }, [load])
 
-  const child = children[0] ?? null
+  const child = children.find(item => item.player_user_id === selectedChildId) ?? children[0] ?? null
   const currentDraft: ApprovalDraft = draft?.childId === child?.player_user_id && draft
     ? draft
     : { childId: child?.player_user_id ?? '', relationship: 'parent', optional: {}, confirmed: false }
@@ -157,8 +158,25 @@ function ParentConsentAccount({ parentId }: { parentId: string }) {
     <MobileShell>
       <div className="px-6 py-8 flex flex-col gap-5">
         {savedFor && <p role="status" className="text-sm text-muted-foreground">Approval saved for {savedFor}.</p>}
+        {children.length > 1 && (
+          <div>
+            <label htmlFor="approval-child" className="block text-sm text-muted-foreground mb-2">Child to approve</label>
+            <select id="approval-child" value={child.player_user_id} disabled={submitting}
+              onChange={event => {
+                if (submittingNow.current) return
+                setSelectedChildId(event.target.value)
+                setDraft(null)
+                setSavedFor(null)
+              }}
+              className="w-full min-h-11 rounded-xl border border-border bg-card px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary">
+              {children.map(item => (
+                <option key={item.player_user_id} value={item.player_user_id}>{item.full_name} · Age {item.age_years}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
-          <h1 className="text-2xl text-foreground mb-1">Approve {firstName}'s account</h1>
+          <h1 className="text-2xl text-foreground mb-1 break-words">Approve {child.full_name}'s account</h1>
           <p className="text-sm text-muted-foreground">
             {firstName} is {child.age_years}. Under {CONSENT_THRESHOLD_AGE}, a parent or guardian
             has to approve before their coach can record anything about them.
@@ -230,8 +248,8 @@ function ParentConsentAccount({ parentId }: { parentId: string }) {
           </div>
         </div>
 
-        <Button onClick={handleSubmit} disabled={submitting || !confirmed} className="w-full">
-          {submitting ? 'Saving…' : `Approve ${firstName}'s account`}
+        <Button onClick={handleSubmit} disabled={submitting || !confirmed} className="w-full min-h-11 h-auto py-2 whitespace-normal break-words">
+          {submitting ? 'Saving…' : `Approve ${child.full_name}'s account`}
         </Button>
       </div>
     </MobileShell>

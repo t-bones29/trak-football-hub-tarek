@@ -1,0 +1,17 @@
+# Parent Profile consent withdrawal
+
+Scope: add the withdrawal promised by the existing notice, using the existing own-consent RPC. No migration or retention/purpose-policy change. Based on parent selection f3a6aad.
+
+Acceptance: child-specific confirmation, ordinary parent authentication, no duplicate pending write, captured-account requests, truthful failure and reconciliation, query cancellation/removal for the selected child, second child unaffected, bounded waits and cancellation. Test through actual App/AuthProvider/SDK; then isolated synthetic browser.
+
+Release: independent draft review and approval required; no production authorization. Rollback frontend independently; preserve consent audit rows and withdrawal state. Do not restore consent as a rollback. Historical visibility must be measured separately from future-write gates.
+
+Validation: eight route regressions failed before implementation. Final 16 focused tests pass; removing cancellation/cache removal makes the cache regression fail, and restoring the bytes restores green. All 20 canonical CI commands pass on Node 22, including native PostgreSQL 17 and ten built-app browser journeys. Source suite: 688 passed, nine skipped. Evidence: `artifacts/2026-09-22-parent-withdrawal/` in the coordination workspace.
+
+Earlier attempts are retained: initial typecheck caught missing generated API types (now a narrow typed adapter for the existing contracts); sandbox blocked native shared memory/browser listening; two browser fixtures initially rejected the newly added status read. Final fixtures verify the exact parent/child filters and still reject writes.
+
+Implementation binds the operation to the confirming parent's token, validates status/withdrawal responses, bounds the UI wait to 20 seconds, aborts on child/account/navigation change, and drops only the captured child's history queries even after an ambiguous result. A hung pre-existing Auth SDK lookup may finish later, but its aborted signal prevents a later consent request. Cancellation cannot undo a write already accepted by the server. A failed write response requires a new status read before retry.
+
+Limitations: this withdraws the current parent's records only; another guardian's approval is separate. Existing historical-visibility and optional-purpose backend policies are unchanged. No account/data deletion, schema change, production deployment, physical-phone proof or claim of complete P2 coverage. The isolated browser at functional commit 0ffeea0 passed in 9.831 seconds: one confirmed withdrawal of Synthetic Amber, Indigo still active and its history intact. 59 requests, one telemetry event, no HTTP errors, console/page errors or boundary violations. Independent database read confirms Amber active records 1→0 and retained withdrawn records 1→2; Indigo stays active 1/withdrawn 0. Cached history is refetched; the backend still returns Amber's historical matches and awards. This is observed policy behavior, not proof that historical access should continue.
+
+Visual inspection found the existing destructive button token gives 3.78:1 white-text contrast. The final styling uses the existing outline button with a destructive border, preserving readable foreground text. All 20 checks pass again after this styling change. The real write evidence remains the functionally identical 0ffeea0; a read-only final-preview check verifies the changed confirmation styling. No further consent write is needed.

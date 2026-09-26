@@ -50,6 +50,17 @@ describe('TRAK-71: player Profile tab', () => {
     await waitFor(() => expect(screen.queryByText('YOUR COACH')).toBeNull())
   })
 
+  // TRAK-48 slice 4: the roster is the only way into a squad, so a player with
+  // no coach yet is never offered a code to type.
+  it('offers no coach code to a player who is not linked yet', async () => {
+    server.use(table('squad_players', []))
+    renderApp('/player/profile')
+    await screen.findByText('CONNECTIONS')
+    await waitFor(() => expect(screen.queryByText('CONNECT TO YOUR COACH')).toBeNull())
+    expect(screen.queryByPlaceholderText('TRK-XXXX')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull()
+  })
+
   it('lists each coach assessment, and opening one goes to that assessment', async () => {
     const user = userEvent.setup()
     renderApp('/player/profile')

@@ -19,6 +19,17 @@ import { join } from 'node:path'
 
 const MIGRATIONS = join(process.cwd(), 'supabase', 'migrations')
 
+// TRAK-48 slice 4 (20260926170000) closed app-role inserts on squad_players:
+// the operator's roster load is the only writer. A check over the INSERT
+// policies must then prove the grant is revoked rather than pass vacuously,
+// and still holds any INSERT policy a later migration adds.
+function expectSquadInsertsClosedOrGuarded(inserts: unknown[]) {
+  if (inserts.length > 0) return
+  const revoked = readdirSync(MIGRATIONS).some(f =>
+    readFileSync(join(MIGRATIONS, f), 'utf8').includes('REVOKE INSERT ON TABLE public.squad_players FROM PUBLIC, anon, authenticated'))
+  expect(revoked, 'no squad_players INSERT policy is live, yet no migration revokes the INSERT grant').toBe(true)
+}
+
 /** Tables where a write must require the caller to hold a role, not just claim ownership. */
 const ROLE_GUARDED: Record<string, string> = {
   coach_assessments: 'is_coach',
@@ -223,7 +234,7 @@ describe('a departed coach keeps nothing', () => {
 
   it('a roster row cannot be created already departed', () => {
     const inserts = live.filter(p => p.table === 'squad_players' && p.op === 'INSERT')
-    expect(inserts.length).toBeGreaterThan(0)
+    expectSquadInsertsClosedOrGuarded(inserts)
     for (const p of inserts) {
       expect(
         p.body.includes('coach_departed'),
@@ -321,7 +332,7 @@ describe('a departed coach keeps nothing', () => {
     // The self-link trigger denies retargeting; actual UPDATE denial AND
     // legitimate-edit regressions run in academy_access_security.sql in CI.
     const inserts = live.filter(p => p.table === 'squad_players' && p.op === 'INSERT')
-    expect(inserts.length).toBeGreaterThan(0)
+    expectSquadInsertsClosedOrGuarded(inserts)
     for (const p of inserts) {
       expect(
         p.body.includes('linked_player_id'),

@@ -3,6 +3,7 @@ import { ChevronRight, Settings as SettingsIcon } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParentChildren } from '@/contexts/ParentChildrenContext'
 import { ParentChildSelector, ParentFamilyContent } from '@/components/parent/ParentFamily'
+import { ParentConsentWithdrawal } from '@/components/parent/ParentConsentWithdrawal'
 import { MobileShell, NavBar, MetadataLabel } from '@/components/trak'
 import { IconHowItWorks } from '@/components/icons/TrakIcons'
 
@@ -37,6 +38,7 @@ export default function ParentProfilePage() {
           <p className="text-sm text-muted-foreground pb-3">
             Following {selectedChild?.name} · {children.length} {children.length === 1 ? 'child' : 'children'} linked
           </p>
+          <ParentConsentWithdrawal />
         </ParentFamilyContent>
 
         {/* Account info */}

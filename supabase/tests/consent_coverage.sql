@@ -297,7 +297,11 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims',
   jsonb_build_object('role','authenticated','sub',pg_temp.cid(6))::text, true);
 
+-- TRAK-48 slice 4: app roles can no longer call link_player_to_coach; the
+-- link still happens, run as the owner with the player's claims.
+RESET ROLE;
 SELECT public.link_player_to_coach('CONSENT1');
+SET LOCAL ROLE authenticated;
 
 -- The gate now engages correctly for anything written from here on...
 SELECT pg_temp.cexpect_denied($$
