@@ -96,6 +96,8 @@ async function invitationsFixture(page: Page, context: BrowserContext, initialAc
           const id = (observed.body as { p_invite_id?: string }).p_invite_id;
           return json(id === zaraInvite ? zaraId : alexId);
         }
+        // TRAK-77: Matches lists the selected child's training (a read, over POST).
+        if (url.pathname === '/rest/v1/rpc/family_training_history') return json([]);
         if (url.pathname === '/rest/v1/rpc/get_children_awaiting_consent') {
           return json(claims.length ? [{ player_user_id: zaraId, full_name: 'Zara Example', age_years: 14 }] : []);
         }
@@ -228,6 +230,8 @@ async function secondChildFixture(page: Page, context: BrowserContext) {
     if (request.method() === 'POST') {
       if (url.pathname === '/rest/v1/telemetry_events') return json(null, 201);
       if (url.pathname === '/rest/v1/rpc/get_children_awaiting_consent') return json([]);
+      // TRAK-77: Matches lists the selected child's training (a read, over POST).
+      if (url.pathname === '/rest/v1/rpc/family_training_history') return json([]);
       if (url.pathname === '/rest/v1/rpc/get_my_pending_parent_invites') return json(linked.has(zaraId) ? [] : [{
         invite_id: zaraInvite, player_user_id: zaraId, player_name: children[1].name,
         parent_email: parentEmail, expires_at: new Date(Date.now() + 86_400_000).toISOString(),
@@ -368,7 +372,7 @@ test('existing parent accepts a second child, recovers a failed family refresh a
   const allowedPosts = new Set([
     '/rest/v1/telemetry_events', '/rest/v1/rpc/get_children_awaiting_consent',
     '/rest/v1/rpc/get_my_pending_parent_invites', '/rest/v1/rpc/get_parent_invite_by_token',
-    '/rest/v1/rpc/accept_parent_invite',
+    '/rest/v1/rpc/accept_parent_invite', '/rest/v1/rpc/family_training_history',
   ]);
   expect(observed.requests.filter(request => request.method !== 'GET')
     .every(request => request.method === 'POST' && allowedPosts.has(request.path))).toBe(true);
