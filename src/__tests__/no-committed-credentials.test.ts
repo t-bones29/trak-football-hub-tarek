@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { resolve, join, relative } from 'node:path'
+import { resolve, join } from 'node:path'
 import * as burned from '../../scripts/burned-credentials.mjs'
+import { repoRelative } from '../../tests/support/repo-path'
 
 // The dev-account password was a literal in LandingPage.tsx, DevSetupPage.tsx
 // and DevSwitcher.tsx. The /dev-setup ROUTE is registered behind
@@ -55,7 +56,9 @@ function allFiles(): string[] {
 
 describe('no committed credentials', () => {
   const files = allFiles()
-  const rel = files.map(f => relative(ROOT, f))
+  // Always `/`: the checks below compare against `/` paths, and
+  // path.relative() gives `\` on Windows (the hook failed there, #166).
+  const rel = files.map(f => repoRelative(ROOT, f))
 
   it('walks the whole repository, so a clean result means something', () => {
     // The previous version passed while missing three files, because its search
@@ -74,7 +77,7 @@ describe('no committed credentials', () => {
     it(`${secret} appears only where it is meant to`, () => {
       const found = files
         .filter(f => readFileSync(f, 'utf8').includes(secret))
-        .map(f => relative(ROOT, f))
+        .map(f => repoRelative(ROOT, f))
         .sort()
       const unexpected = found.filter(f => !ALLOWED.includes(f))
       expect(unexpected, `${secret} is in: ${unexpected.join(', ')}`).toEqual([])
@@ -94,7 +97,7 @@ describe('no committed credentials', () => {
   it('no source file assigns a password literal', () => {
     const assignments: string[] = []
     for (const file of files) {
-      const r = relative(ROOT, file)
+      const r = repoRelative(ROOT, file)
       if (!/\.(ts|tsx|js|mjs|cjs)$/.test(r)) continue
       // Test fixtures legitimately carry synthetic passwords; the burned-value
       // checks above still apply to them.
