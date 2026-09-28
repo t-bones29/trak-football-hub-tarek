@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { spawnSync } from 'node:child_process'
-import { existsSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 // @ts-expect-error: plain .mjs script, no types
 import { rows, toCsv, COACHES, insideRepo, SYNTHETIC_DOMAIN, isSyntheticDomain } from '../../scripts/rehearsal/make-roster.mjs'
@@ -42,6 +42,37 @@ describe('TRAK-24 rehearsal roster', () => {
     const other = rows('tester@example.com', TODAY, 'squad.example')
     expect(other.filter((r: { child_email: string }) => r.child_email.endsWith('@squad.example'))).toHaveLength(22)
     expect(() => rows('tester@example.com', TODAY, 'rehearsal.trakfootball.com')).toThrow(/synthetic/)
+  })
+
+  // Only the 3 phone families should ever get invitations (load-roster's
+  // --send-invites applies to every row in a file); the 22 synthetic
+  // guardians are undeliverable. --phone-out splits them into their own file.
+  it('writes the 3 phone families and the 22 synthetic children to separate files with --phone-out', () => {
+    const dir = resolve(REPO_ROOT, '..')
+    const all = resolve(dir, `trak24-split-all-${process.pid}.csv`)
+    const phone = resolve(dir, `trak24-split-phone-${process.pid}.csv`)
+    try {
+      const run = spawnSync(process.execPath, ['scripts/rehearsal/make-roster.mjs', '--inbox', 'tester@example.com',
+        '--out', all, '--phone-out', phone], { cwd: REPO_ROOT, encoding: 'utf8' })
+      expect(run.status, run.stderr).toBe(0)
+      // parseCsv returns the header row first; child_email is column 3.
+      const synth = parseCsv(readFileSync(all, 'utf8')).slice(1)
+      const phones = parseCsv(readFileSync(phone, 'utf8')).slice(1)
+      expect(phones.map((r: string[]) => r[3])).toEqual(
+        ['tester+sib1@example.com', 'tester+sib2@example.com', 'tester+withheld@example.com'])
+      expect(synth).toHaveLength(22)
+      expect(synth.every((r: string[]) => r[3].endsWith(`@${SYNTHETIC_DOMAIN}`))).toBe(true)
+    } finally { rmSync(all, { force: true }); rmSync(phone, { force: true }) }
+  })
+
+  it('refuses a --phone-out inside the repository too, and writes nothing', () => {
+    const outside = resolve(REPO_ROOT, '..', `trak24-split-ok-${process.pid}.csv`)
+    const run = spawnSync(process.execPath, ['rehearsal/make-roster.mjs', '--inbox', 'tester@example.com',
+      '--out', outside, '--phone-out', '../leak-phone.csv'], { cwd: resolve(REPO_ROOT, 'scripts'), encoding: 'utf8' })
+    expect(run.status).toBe(1)
+    expect(run.stderr).toMatch(/outside the repository/)
+    expect(existsSync(resolve(REPO_ROOT, 'leak-phone.csv'))).toBe(false)
+    expect(existsSync(outside)).toBe(false)
   })
 
   it('can be imported without a script path (node -e, a REPL) without crashing', () => {

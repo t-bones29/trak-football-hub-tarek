@@ -2,7 +2,12 @@
 // TRAK-24: the 25-player synthetic roster for the deployed rehearsal.
 //
 //   node scripts/rehearsal/make-roster.mjs --inbox you@gmail.com --out /tmp/trak24-roster.csv
-//     [--synthetic-domain rehearsal.trak.test]
+//     [--phone-out /tmp/trak24-phones.csv] [--synthetic-domain rehearsal.trak.test]
+//
+// With --phone-out, the 3 phone families go to that file and the 22 synthetic
+// children to --out, so only the phone families are loaded with
+// load-roster.mjs --send-invites (it invites every row in a file, and the
+// synthetic guardians are undeliverable).
 //
 // Writes a CSV for scripts/load-roster.mjs. 25 children in two age groups:
 //   - 3 phone children who really sign up, at plus-addresses of --inbox:
@@ -96,10 +101,22 @@ export const toCsv = (list) => [COLUMNS.join(','), ...list.map(r => COLUMNS.map(
 async function main() {
   const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) =>
     (a.startsWith('--') ? [...acc, [a.slice(2), all[i + 1]]] : acc), []));
-  if (!args.inbox || !args.out) throw new Error('Usage: --inbox you@gmail.com --out /path/outside/the/repo.csv');
+  if (!args.inbox || !args.out) throw new Error('Usage: --inbox you@gmail.com --out /path/outside/the/repo.csv [--phone-out /other/path.csv]');
   const out = resolve(args.out);
-  if (insideRepo(out)) throw new Error('--out must be outside the repository: the file holds real inboxes');
+  const phoneOut = args['phone-out'] ? resolve(args['phone-out']) : null;
+  // Check every destination before writing any, so a refusal writes nothing.
+  for (const file of [out, phoneOut].filter(Boolean)) {
+    if (insideRepo(file)) throw new Error('--out and --phone-out must be outside the repository: the files hold real inboxes');
+  }
+  if (phoneOut && phoneOut === out) throw new Error('--phone-out must be a different file from --out');
   const list = rows(args.inbox, new Date(), args['synthetic-domain'] ?? SYNTHETIC_DOMAIN);
+  if (phoneOut) {
+    const phones = list.slice(0, 3);
+    await writeFile(phoneOut, toCsv(phones), { mode: 0o600 });
+    await writeFile(out, toCsv(list.slice(3)), { mode: 0o600 });
+    console.log(`[make-roster] ${phones.length} phone families written to --phone-out (load these with --send-invites), ${list.length - phones.length} synthetic children to --out (load without). Keep both files out of the repo and chat.`);
+    return;
+  }
   await writeFile(out, toCsv(list), { mode: 0o600 });
   console.log(`[make-roster] ${list.length} children written (3 phone children, 22 that never sign up). Keep the file out of the repo and chat.`);
 }
