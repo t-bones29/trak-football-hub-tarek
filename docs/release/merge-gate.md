@@ -1,63 +1,129 @@
 # Merge and deployment gate
 
-Imad coordinates releases. Every PR needs one approval from someone who did not author it (see *What approval means*); Imad merges after approval, in the agreed order, one at a time. Every task has its own branch. No direct pushes to main.
+Reviewed for the 8 October 2026 documentation audit. Imad coordinates releases.
+Every PR needs one approval from someone who did not author it. Imad merges in
+the agreed order, one at a time. Use a task branch; no direct pushes to main.
 
-Friday 25 September is a synthetic demo. Real children join only when the launch gate in [MVP Requirements](../../MVP%20Requirements) passes and a founder majority agrees. No configured date waives it.
+Real children join only when the J1–J8 launch gate in
+[MVP Requirements](../../MVP%20Requirements) passes and a founder majority
+agrees. J8 events have their own nine acceptance checks and production-phone
+rehearsal. Neither a past synthetic rehearsal nor a configured start date
+waives the gate.
 
-## What approval means
+## Review and approval
 
-Decided by Imad on 19 September 2026, after two days in which every PR was reviewed and none was approved.
+The 19 September review decision remains in force. A non-author's review:
 
-A PR is approved when a reviewer who did not author it posts a review that:
+1. States what they ran or exercised, with results relevant to the change.
+2. Lists findings and their fixes or explicit acceptance.
+3. Ends with **MERGE**, **MERGE AFTER <fix>**, or **DO NOT MERGE**.
 
-1. states what they **ran** — replayed, executed, built, driven — not what they read;
-2. names every finding, each with a fix or an explicit *accept as-is*;
-3. ends with one verdict: **MERGE**, **MERGE AFTER \<fix\>**, or **DO NOT MERGE**.
+A human non-author must also approve in GitHub after the latest push, with
+required checks green and conversations resolved. An author's self-review or
+an agent reviewing its own human's PR is not independent approval. Updating
+the branch may invalidate approval; finish branch updates before requesting it.
 
-The verdict is the approval. Until branch protection is enabled on `main`, the reviewer's human clicks *Approve* on GitHub when they can; when they cannot, the verdict posted in #coding-agents-at-work stands and Imad merges as coordinator. **Once protection is enabled that fallback ends:** GitHub checks only for an *Approve* click, from someone other than the author, made after the last push — so the human must click, every time, and a Slack verdict alone merges nothing. Merging `main` into a PR counts as a push and dismisses the earlier approval, so re-merge before asking for the click, not after. An author's self-review, or an agent reviewing its own human's PR, is not an approval.
+The 8 October API check reported main as protected and named the required
+checks `test` and `Base branch still reaches main`. The full protection endpoint
+was not accessible to the audit account, so this does not verify every admin
+setting. The reviewed target configuration is
+[main-branch-protection.json](main-branch-protection.json): one independent
+approval after the last push, current-base checks, resolved conversations and
+admin enforcement. `Supabase` and `Deploy` run after merge, not as PR checks.
+An administrator should compare the live settings with that file before
+changing protection; committing the JSON does not apply it.
 
-Before a PR opens, author and reviewer agree what success looks like — which suites must pass and what the change must demonstrably do — and it goes in the PR description. Every behavioural change ships with a test that fails without it; a test that has never been seen red is not evidence.
-
-Commit only green. The pre-commit hook is the rule; never bypass it. Small commits through the day, each one passing, so that anything committed is known to work. Work that cannot reach green in one sitting stays uncommitted or on a branch that is never merged as-is.
-
-## Activate protection (repository administrator)
-
-The September 18 access check found that Imad has write permission but not admin permission. This file is a proposed configuration, not evidence that protection is enabled.
-
-From the repository root, a repository administrator can apply the reviewed configuration:
-
-```sh
-gh api --method PUT repos/kostasanastasioubusiness-lang/trak-football-hub/branches/main/protection --input docs/release/main-branch-protection.json
-gh api repos/kostasanastasioubusiness-lang/trak-football-hub/branches/main/protection
-```
-
-`docs/release/main-branch-protection.json` is the single source of truth; do not apply a command typed from memory or from a Slack message. It requires `test` and `Base branch still reaches main` on the latest main state, one independent approval after the latest push, and resolved review conversations. Enforce the rules for administrators. Block force-push and deletion. `Supabase` and `Deploy` are post-merge production jobs, not required PR checks. Confirm a red test check cannot merge; merely committing this JSON enables nothing.
+The old unprotected-branch Slack-verdict fallback no longer applies. CODEOWNERS
+exists, but the proposed reduced-approval route for documentation is not an
+agreed replacement for the one-approval rule.
 
 ## Before merge
 
-1. Announce migration table/RPC changes and shared-file reservations in #coding-agents-at-work before editing. Never rewrite a historical migration.
-2. Rebase or merge current main; identify dependent PRs and backward compatibility of SQL, callers and generated types.
-3. Run `npm test`, `npm run test:harness`, `npm run typecheck`, `npm run build`, `npm run lint` and `npm run uc:check`. Run the executable SQL tests for a migration. Pending use-case failures are debt, not proof of correctness: explicitly record them and require the changed journey to pass.
-4. Obtain a verified review with a verdict from someone who did not author the PR, as defined above. A self-review is not an approval.
+- Read the assigned issue and name its journey, guarantee or launch-gate purpose.
+  Agree the acceptance checks in the PR description. Use one issue per PR.
+- Coordinate migration/RPC changes and shared-file reservations in
+  #coding-agents-at-work. The author or an explicitly authorized delegate posts
+  the notice. Keep private child data out of public evidence.
+- Update from current main; identify dependent PRs and compatibility between SQL,
+  edge functions, callers and generated types. Keep historical migrations intact.
+- Run `npm test`, `npm run test:harness`, `npm run typecheck`, `npm run build`,
+  `npm run lint` and `npm run uc:check`. Run the executable SQL checks when a
+  migration changes. For documentation, also check references, generated
+  registries and deleted-file backlinks. Record pending use-case failures as
+  debt, not proof of correctness; the changed journey must pass its own checks.
+- Behaviour changes need regression evidence that fails without the fix.
+  Documentation changes need source and reference verification. Preserve the
+  pre-commit hook; never bypass it to manufacture a green commit.
+- Obtain the independent review and GitHub approval, then let the coordinator
+  merge when all required checks pass on the final commit.
+
+## During the pilot: decision open
+
+The 8 October discussion has not settled which features or fixes may ship,
+notice periods, the deployment window, urgent-change approval or a duty rota.
+A 48-hour notice, a quiet deployment window, a 15-minute verification period
+and rollback in seconds are proposals, not established policy or measured
+capabilities. Existing review and release requirements continue until an agreed
+replacement is recorded here and implemented. Do not infer an emergency bypass.
+
+There is no separate staging environment. Synthetic and real organizations use
+the same website and database; a second academy fixture tests isolation only.
+The academy has not yet been briefed as of 8 October. The forthcoming briefing
+must cover this and the recorded backup/recovery limitations; record completion
+rather than describing it as already disclosed.
 
 ## After merge
 
-Wait for the full workflow to finish before the next schema merge. Production workflows are serialized and are not cancelled by newer pushes. The main frontend deployment requires an explicitly successful Supabase job. Missing production Vercel credentials fail the workflow rather than reporting a silent skipped deployment.
+Wait for the full workflow before the next schema merge. Canonical main's
+workflow serializes production releases. It applies pending migrations and
+edge functions, then deploys the frontend only after a successful Supabase job.
+Missing production credentials fail the workflow. Fork CI cannot deploy
+production. Preview deployments share the backend and do not prove a new
+migration before it is applied.
 
-Verify both deployment jobs and the routed journey on trakfootball.com using designated synthetic accounts. A PR preview uses the shared backend and does not test a new migration before it is applied. Record commit, workflow URL, migration version, role, expected/observed outcome, browser/phone, and outstanding limitations. Announce the result in Slack, distinguishing merged, deployed and verified.
+Verify both production jobs and the affected routed journey on trakfootball.com
+with designated synthetic accounts. Record commit, workflow URL, migration
+version, role, expected and observed outcome, device/browser and limitations.
+The owner posts the result on the issue and coordinates its Slack notice,
+distinguishing merged, deployed and verified. Move to Done only with deployed
+proof; otherwise leave Verifying and record the blocker.
 
-## Failed release
+## Failed release and recovery
 
-Stop the merge queue. Identify which migrations/functions actually applied; do not assume a red job rolled back prior steps. Use reviewed forward migrations to repair schema/permissions. A previous compatible frontend may be restored while retaining security fixes. Never erase migration history or restore an older access-control vulnerability as a rollback shortcut.
+1. Stop the merge queue. Record the commit, failed job and observed user impact.
+   For a wrong recipient, consent bypass, cross-child read, safeguarding concern
+   or stop/delete request, also pause the affected scope and new admissions as
+   required by the pilot incident rule.
+2. Determine which migrations and functions actually applied. A failed workflow
+   does not undo earlier steps. Preserve deployment logs and identify the last
+   known compatible frontend and backend state.
+3. Choose the repair with the coordinator. Repair schema/permissions using a
+   reviewed forward migration. If restoring a previous frontend, first verify
+   it remains compatible with the current backend and retains security fixes.
+   Do not erase migration history or restore a former access-control defect.
+4. The operator records the exact deployment selected, executes the reviewed
+   recovery action, verifies both service state and the affected journey with
+   synthetic accounts, and records timing and limitations. There is no verified
+   one-command rollback or promised recovery time in this audit.
+5. The coordinator resumes the merge queue after the release is verified.
+   Restart after an incident covered by the pilot pause rule requires a founder
+   majority, subject to legal duties. A privacy or safeguarding incident also
+   follows the runbook's escalation path. The urgent-change approval policy
+   remains open; these steps do not create a bypass.
 
-The second academy provides isolation test fixtures; it is not a staging environment or backup. Real-child admission additionally requires the launch gate in [MVP Requirements](../../MVP%20Requirements).
+The last recorded decision (2 October, TRAK-23, superseding the earlier open
+TRAK-46 note) accepts daily backups retained for seven days, no point-in-time
+recovery and an unrehearsed restore for the pilot. These settings need checking
+at admission; recovery duration remains unmeasured. A restore can lose writes
+since the selected backup. See [the restore record](s5-restore-rehearsal.md)
+before any restore; a database restore is not a frontend rollback.
 
-# Fork-first development
+## Fork-first development
 
-All Imad/Codex changes are committed and tested in `imadd23x/trak-football-hub`.
-The canonical source remains `kostasanastasioubusiness-lang/trak-football-hub`.
-Regression tests belong in the same task branch as the fix. Fork CI runs checks
-only: repository identity guards prevent Vercel and Supabase deployment jobs.
-Do not copy production credentials into the fork. After tests pass, open a pull
-request from the fork to the canonical repository. A non-author reviews and
-posts a verdict; Imad merges after the required checks pass on the current commit.
+The existing rule places Imad/Codex changes in `imadd23x/trak-football-hub`,
+with `kostasanastasioubusiness-lang/trak-football-hub` as canonical upstream.
+Use the assigned human's agreed fork and permissions; resolve an account/fork
+mismatch with the coordinator before pushing rather than assuming an identity.
+Keep regression tests on the task branch. Fork CI runs checks only; never copy
+production credentials into the fork. After checks pass, open the PR against
+canonical main and follow the independent review gate above.

@@ -1,4 +1,9 @@
-<title>Trak Data Inventory</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trak Data Inventory — 8 October 2026</title>
 <style>
   :root {
     --ground:#0A0A0B; --surface:#121314; --surface-2:#17191A;
@@ -120,249 +125,215 @@
   :focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
   @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
 </style>
-
+</head>
+<body>
 <div class="wrap">
-
 <header class="mast">
-  <div class="eyebrow">For the lawyer and the academy &middot; v1</div>
-  <h1>What Trak stores about a child</h1>
-  <p class="lede">Every table, what it holds, who can read it &mdash; read directly from the database schema rather than from memory. This is the factual basis for the data processing agreement, the privacy policy, and the parental consent wording.</p>
+  <div class="eyebrow">Counsel and operations reference &middot; 8 October 2026</div>
+  <h1>What Trak stores and plans to process</h1>
+  <p class="lede">Data categories, source access controls and open decisions for the first UAE pilot.</p>
   <div class="mast-meta">
-    <span><b>Source</b> &nbsp;20 tables in <code>supabase/migrations/</code></span>
-    <span><b>Hosting</b> &nbsp;Supabase &middot; Lovable &mdash; both US companies</span>
-    <span><b>Subjects</b> &nbsp;Minors aged 13&ndash;18, their parents, coaches, club staff</span>
+    <span><b>Baseline</b> <code>d0ed55ff618ee0a0b943399236527f9e3f7ebbb5</code></span>
+    <span><b>Scope</b> 123 migrations; 28 public base tables after drops</span>
+    <span><b>Evidence</b> Repository inspection, not a live database audit</span>
   </div>
+  <p class="small">Read with <a href="../MVP%20Requirements">MVP Requirements</a> and the <a href="lawyer-meeting-brief-uae.md">UAE counsel brief</a>. Current source, retained legacy data and planned requirements are distinguished below. Auth, storage, provider logs and operator files are additional to the public tables.</p>
 </header>
 
-<section>
+<main>
+<section aria-labelledby="decisions">
   <div class="sec-head">
-    <div class="eyebrow">01 &nbsp;The four things to raise first</div>
-    <h2>Issues that need an answer before week 0</h2>
-    <p class="small">These come from the schema, not from speculation. The first is the one that sits in the critical path of the demo itself.</p>
+    <div class="eyebrow">01 &nbsp;Before relying on this inventory</div>
+    <h2 id="decisions">Open decisions and source discrepancies</h2>
   </div>
-
   <div class="alarm">
-    <div><span class="chip c-risk">Blocker</span></div>
-    <h3>A coach types a child's details before anyone has consented</h3>
-    <p>UC-02 &mdash; the second step of the demo &mdash; has the coach build the squad by hand: <b>name, position, shirt number, age group</b>, stored in <code>squad_players</code> with no linked account. At that moment Trak holds identifiable data about a named minor, and neither the child nor the parent has been asked anything.</p>
-    <p>This is already flagged as a question in the July lawyer brief. It is now the first thing a coach does in the pilot, so it needs an answer rather than a discussion: <b>does the academy's own consent cover it, does consent have to precede roster entry, or does the roster need to hold something less identifying until the child joins?</b></p>
+    <h3>The academy has not been briefed</h3>
+    <p>A meeting is planned in the coming weeks. Scope, data responsibilities, notices, retention, suppliers, calendar exposure and recovery limitations have not been accepted by the academy. Counsel decisions and operational confirmations remain open.</p>
   </div>
-
-  <div class="alarm">
-    <div><span class="chip c-risk">Blocker</span></div>
-    <h3>Health-adjacent data on minors, in a table nothing writes to</h3>
-    <p><code>wellness_logs</code> stores <b>mood, energy, sleep quality and free-text notes</b> per child per day. Under GDPR that is plausibly special category data, which raises the bar considerably &mdash; explicit consent, and likely a DPIA.</p>
-    <p><b>Nothing writes to it.</b> Wellness check-ins were cut from the pilot and <code>WellnessCheck.tsx</code> is reachable from no route. So the table is dormant: it carries the full legal weight of children's health data and delivers nothing.</p>
-    <p><b>Done.</b> Confirmed empty and dropped, along with <code>player_goals</code>, which turned out never to have been removed despite the repo recording it as such. <b>Trak therefore processes no special category data</b>, and the DPIA question that would have followed does not arise.</p>
-  </div>
-
   <div class="grid-2">
     <div class="card">
-      <div><span class="chip c-warn">Decide</span></div>
-      <h3>Free text a parent cannot see</h3>
-      <p class="small"><code>coach_assessments.private_note</code> and <code>admin_notes</code> hold unstructured commentary about a named child, deliberately hidden from parents. That is a defensible product decision and a harder legal one: a subject access request would very likely reach it. Decide who may write there, what the retention period is, and what the answer is when a parent asks.</p>
+      <h3>Admission begins before in-app approval</h3>
+      <p class="small">Trak's operator loads the supplied roster, including DOB and guardian contacts. Coaches cannot create new squad rows. The 8 October product decision permits the coach to view the academy-supplied player profile before approval; assessments remain blocked until approval. The roster is treated as academy data in this flow. Guardian approval can precede child account creation; the initial transfer still needs an agreed basis, notice and responsibility. Email confirmation and a declared relationship are technical evidence, not a legal finding of parental authority.</p>
     </div>
     <div class="card">
-      <div><span class="chip c-warn">Decide</span></div>
-      <h3>Behavioural analytics on minors</h3>
-      <p class="small"><code>telemetry_events</code> records what each user opens and when, including children. It is operational rather than product data and never surfaces in the app &mdash; but it is still behavioural data about minors and must be declared, with a retention period. It is the newest table and post-dates the July brief.</p>
+      <h3>The consent choice and access control differ</h3>
+      <p class="small">The routed screen requires <code>coaching_records</code> and offers <code>recognition</code> and <code>parent_visibility</code> as optional. Database approval checks use active coaching consent; a false parent-visibility choice does not independently block linked-parent history reads. Recognition authoring is separately parked. Align the screen, enforcement and final notice before relying on the approval.</p>
+    </div>
+    <div class="card">
+      <h3>Classification and retention need answers</h3>
+      <p class="small">Dropping wellness does not establish a legal classification for assessments, free text or retained data, or settle whether an impact assessment is required. Retention periods remain open. Do not read invitation expiry or a stale-consent report as automatic erasure.</p>
+    </div>
+    <div class="card">
+      <h3>J8 is a launch requirement, still to implement</h3>
+      <p class="small">The confirmed J8 requirements include weekly events, kit, fixture import, parent absence reports, personal calendar links, event emails, manual sharing and completed registers for the first real-child pilot. The legacy calendar below is parked for app authoring. Its existence does not demonstrate the new J8 flow or calendar-link controls.</p>
     </div>
   </div>
 </section>
 
-<section>
+<section aria-labelledby="inventory">
   <div class="sec-head">
-    <div class="eyebrow">02 &nbsp;Inventory</div>
-    <h2>Every table, and whose data it holds</h2>
-    <p class="small">"Minor's data" means the row is about a child. Access describes the intended design, verified against the row-level security policies in the last authorization review.</p>
+    <div class="eyebrow">02 &nbsp;Current source</div>
+    <h2 id="inventory">Public tables and access boundaries</h2>
+    <p class="small">These are schema categories and code controls, not claims that every field is populated in production. “Family” means the child or their linked parent where that table permits access. Ordinary family development-record reads and new development writes require active approval below 18; unknown age does not grant a bypass. Retained player-logged matches have an explicit read exception. Account export uses a separate path described in section 05. This is the implemented threshold, not a legal conclusion. Trusted operator access is additional to app access.</p>
   </div>
-
   <div class="tbl-scroll">
     <table>
-      <thead>
-        <tr><th>Table</th><th>What it holds</th><th>Minor's data</th><th>Who can read it</th></tr>
-      </thead>
+      <caption class="small">28 public base tables implied by the source migrations</caption>
+      <thead><tr><th scope="col">Table</th><th scope="col">Data category</th><th scope="col">Status and access in source</th></tr></thead>
       <tbody>
-        <tr>
-          <td class="tbl-name">profiles</td>
-          <td>Full name, role, nationality, avatar, invite code</td>
-          <td><b>Yes</b></td>
-          <td class="who">Self; club admin reads all</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">player_details</td>
-          <td><b>Date of birth</b>, position, current club, age group, shirt number</td>
-          <td><b>Yes</b> &mdash; DOB identifies age directly</td>
-          <td class="who">Self; linked coach; linked parent</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">squad_players</td>
-          <td>Player name, position, shirt number, age, age group &mdash; <b>typed by the coach, may precede any account</b></td>
-          <td><b>Yes</b></td>
-          <td class="who">Owning coach; club admin</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">matches</td>
-          <td>Per-match performance: position, minutes, goals, assists, cards, <b>body condition</b>, self rating, computed rating</td>
-          <td><b>Yes</b></td>
-          <td class="who">The player; linked parent</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">coach_assessments</td>
-          <td>Six 1&ndash;10 ratings, derived card stats, flag, <b>private note</b></td>
-          <td><b>Yes</b></td>
-          <td class="who">Owning coach; the player; parent (not the private note)</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">coach_assessment_notes</td>
-          <td>Written coaching feedback about a child</td>
-          <td><b>Yes</b></td>
-          <td class="who">Owning coach; the player</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">wellness_logs</td>
-          <td><b>Mood, energy, sleep quality, free-text notes</b> &mdash; possible special category data</td>
-          <td><b>Yes</b> &mdash; and dormant; see above</td>
-          <td class="who">The player</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">recognition_awards</td>
-          <td>Award type, what it was for, coach note</td>
-          <td><b>Yes</b></td>
-          <td class="who">Owning coach; the player; linked parent</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">session_attendance</td>
-          <td>Present/absent per session, minutes played</td>
-          <td><b>Yes</b></td>
-          <td class="who">Owning coach</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">meeting_requests</td>
-          <td>Coach's stated reason for requesting a meeting about a player</td>
-          <td><b>Yes</b></td>
-          <td class="who">Owning coach</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">admin_notes</td>
-          <td>Club admin's free-text notes on a player or coach</td>
-          <td><b>Yes</b> where the target is a player</td>
-          <td class="who">Club admin only</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">telemetry_events</td>
-          <td>Event type, role, timestamp, metadata &mdash; what each user opened and when</td>
-          <td><b>Yes</b></td>
-          <td class="who">Nobody in the app; service role only</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">parent_invites</td>
-          <td><b>Parent email address</b>, invite token, status</td>
-          <td>Parent's data, tied to a child</td>
-          <td class="who">The inviting player; the invited parent</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">player_parent_links</td>
-          <td>Which parent is linked to which child</td>
-          <td>Relationship data</td>
-          <td class="who">Both parties</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">coach_details</td>
-          <td>Current club, team, coach role, organisation</td>
-          <td>No &mdash; adult</td>
-          <td class="who">Self; club admin</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">staff_compliance</td>
-          <td><b>DBS status and expiry, safeguarding completion, licence level, first aid expiry</b></td>
-          <td>No &mdash; adult, but sensitive employment data</td>
-          <td class="who">Club admin</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">coach_sessions</td>
-          <td>Training and match sessions: type, date, focus, venue, notes</td>
-          <td>No</td>
-          <td class="who">Owning coach</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">coach_calendar_events</td>
-          <td>Fixtures and training: title, times, venue, opponent</td>
-          <td>No</td>
-          <td class="who">Owning coach; published events to the squad</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">organizations</td>
-          <td>Academy name, join code, logo, admin</td>
-          <td>No</td>
-          <td class="who">Members of the organisation</td>
-        </tr>
-        <tr>
-          <td class="tbl-name">pilot_config</td>
-          <td>Pilot start date and organisation &mdash; no personal data</td>
-          <td>No</td>
-          <td class="who">Service role only</td>
-        </tr>
+        <tr><td class="tbl-name">profiles</td><td>Name, role, nationality, account link; legacy avatar URL and coach code.</td><td>Self and role/relationship policies; club admin reads are organization-scoped. New avatar use is disabled.</td></tr>
+        <tr><td class="tbl-name">player_details</td><td>DOB, position, club, age group, shirt number.</td><td>Self; linked coach/parent and scoped admin. Roster DOB is used for admitted children; app DOB changes are restricted.</td></tr>
+        <tr><td class="tbl-name">coach_details</td><td>Coach club, team, role and organization.</td><td>Self; organization-scoped admin reads.</td></tr>
+        <tr><td class="tbl-name">organizations</td><td>Organization name, admin link, join code and logo reference.</td><td>Existing membership/admin policies. The academy console is parked; organizational records remain.</td></tr>
+        <tr><td class="tbl-name">squad_players</td><td>Child name, football profile, coach/organization, status and linked account.</td><td>Operator admission only; no app INSERT or DELETE. Coach ownership, family links and scoped admin govern reads. A coach may view the supplied player profile before approval. Departure removes the former coach's roster access.</td></tr>
+        <tr><td class="tbl-name">roster_children</td><td>DOB, optional child email, squad/organization/account links, loader, source-file reference and invitation history.</td><td>No direct app access. Service-role admission and scoped functions. Child email may be absent.</td></tr>
+        <tr><td class="tbl-name">roster_guardians</td><td>Guardian email, declared relationship, child/parent links, loader and invitation history.</td><td>No direct app access. Scoped functions match a confirmed guardian email to the supplied roster.</td></tr>
+        <tr><td class="tbl-name">child_logins</td><td>Username, roster child, creating guardian, Auth target and creation time.</td><td>No direct app access. Authorized guardian functions expose own-child credentials and reset targets. Passwords are handled by Auth, not stored in this table.</td></tr>
+        <tr><td class="tbl-name">roster_email_corrections</td><td>Child/guardian identifiers, operator, time, reason, old/new email hashes and whether an invitation had been sent.</td><td>Service-role correction/audit path. Already-claimed addresses cannot be reassigned through this correction function.</td></tr>
+        <tr><td class="tbl-name">parental_consents</td><td>Child/roster/parent identifiers, purposes, relationship, verification method, notice version, statement, ages and lifecycle timestamps.</td><td>Writes through approval/withdrawal functions; parties read their own records. Approval may precede a child account. Evidence deliberately survives roster/account deletion.</td></tr>
+        <tr><td class="tbl-name">parent_invites</td><td>Child, parent email, token, status, creation and expiry.</td><td>Legacy invitation records remain. Scoped invitation functions enforce caller/email/expiry checks; direct creation/linking is restricted.</td></tr>
+        <tr><td class="tbl-name">player_parent_links</td><td>Child-parent relationship and creation time.</td><td>Linked parties read; controlled admission/invitation functions establish links.</td></tr>
+        <tr><td class="tbl-name">coach_assessments</td><td>Six metric values, overall/derived ratings, flag, session/squad/coach/organization links and coach-name history.</td><td>Roster-owning coach, scoped admin and consent-gated ordinary family reads; account export is separate. The app shows parent bands. Private working notes are stored separately.</td></tr>
+        <tr><td class="tbl-name">coach_assessment_notes</td><td>Private written observations attached to an assessment.</td><td>Owning coach with current roster access. Never player or parent app access. No ordinary app deletion.</td></tr>
+        <tr><td class="tbl-name">coach_shared_feedback</td><td>Separately written coach message, assessment link and publication time.</td><td>Owning coach; child reads published content with required consent. Parents cannot read the message. No automatic copying of private notes.</td></tr>
+        <tr><td class="tbl-name">matches</td><td>Date, opponent, scores, competition, venue, position, minutes, goals, assists, cards, ratings and logging actor.</td><td>Coach writes through a guarded function; family reads of coach-logged matches follow consent. Retained player-logged rows have an explicit read exception. Account export is separate. Player INSERT/UPDATE and app DELETE are closed. Legacy body-condition/self-rating columns remain; the routed coach flow sends null.</td></tr>
+        <tr><td class="tbl-name">coach_sessions</td><td>Training/match type, date, title, focus, venue, competition, notes and coach.</td><td>Coach diary plus scoped admin reads. Families receive only the training projection below. Session context is associated with children through attendance.</td></tr>
+        <tr><td class="tbl-name">session_attendance</td><td>Child/session link, presence and minutes played.</td><td>Coach access requires session and roster ownership. The consent-gated family history function returns date, focus and own-child attendance, excluding diary title/notes.</td></tr>
+        <tr><td class="tbl-name">telemetry_events</td><td>User ID, role, event type, JSON metadata and time.</td><td>App users append own events. Raw table reads and pilot reports are service-role-only; account export includes the caller's events. This includes behavioural data about children.</td></tr>
+        <tr><td class="tbl-name">pilot_config</td><td>Pilot date/organization, measurement configuration and synthetic-account inclusion switch.</td><td>Operational configuration; service-role access. J7 uses it to scope counts.</td></tr>
+        <tr><td class="tbl-name">recognition_awards</td><td>Child, award, reason, coach note and provenance.</td><td>Parked: app writes denied. Retained table reads follow owner, scoped admin and consent-gated family policies; account export is separate.</td></tr>
+        <tr><td class="tbl-name">coach_calendar_events</td><td>Title, event type, dates/times, venue, opponent, notes, published flag and source.</td><td>Legacy calendar: app writes denied. Coach and published family reads remain. This is squad time/location data; no J8 subscription or recurrence schema is present.</td></tr>
+        <tr><td class="tbl-name">meeting_requests</td><td>Coach/child links, meeting reason, status and time.</td><td>Parked: app access revoked. Retained data remains accessible to the service role.</td></tr>
+        <tr><td class="tbl-name">admin_notes</td><td>Free text about a child or coach, author, target and organization.</td><td>Console parked, table retained. Author-ID read/write policies remain; do not describe all console backends as closed.</td></tr>
+        <tr><td class="tbl-name">staff_compliance</td><td>Staff licensing, DBS status/expiry, safeguarding, first aid and notes.</td><td>Adult staff data. App writes parked; organization-scoped admin SELECT retained.</td></tr>
+        <tr><td class="tbl-name">ai_feedback_drafts</td><td>Generated text, model, child/assessment/organization and creator.</td><td>Retained AI workflow data. App access revoked for the pilot.</td></tr>
+        <tr><td class="tbl-name">player_feedback</td><td>Published feedback from the older AI approval workflow and provenance.</td><td>Retained; app access and the old publication function are disabled. Separate from manual <code>coach_shared_feedback</code>.</td></tr>
+        <tr><td class="tbl-name">ai_usage_daily</td><td>User, function, date and call count.</td><td>Retained per-user quota data; own-user reads exist. AI handlers are disabled for the pilot.</td></tr>
       </tbody>
     </table>
   </div>
-
   <div class="callout">
-    <h4>Twelve of the twenty tables hold data about a child</h4>
-    <p>Deletion has to reach all twelve, and <code>delete_my_account()</code> is the mechanism. <b>It has now been tested end to end, twice</b>, against accounts carrying six matches each, coach assessments, awards and a linked parent: the account is removed, sign-in afterwards fails, and no roster rows remain. <code>telemetry_events</code> needs no explicit statement because it cascades from the auth user.</p>
-    <p>Testing it also found that the function referenced <code>player_goals</code>, a table a June migration claimed to have dropped but never did. Had that drop ever been applied, <b>every account deletion would have failed</b> — and nobody would have known, because until now nobody had run one. Both are fixed: the table is gone and the function no longer references it.</p>
+    <h3>Dropped and disabled are different</h3>
+    <p><code>wellness_logs</code> and <code>player_goals</code> are dropped by migration. They are excluded from the 28-table count. Parked tables and avatar objects can retain earlier data. No statement here confirms the contents of the live database or historical supplier copies.</p>
   </div>
 </section>
 
-<section>
+<section aria-labelledby="outside">
   <div class="sec-head">
-    <div class="eyebrow">03 &nbsp;Beyond the tables</div>
-    <h2>What else the DPA has to cover</h2>
+    <div class="eyebrow">03 &nbsp;Beyond public tables</div>
+    <h2 id="outside">Authentication, files and suppliers</h2>
   </div>
-
   <div class="grid-2">
     <div class="card">
-      <h3>Sub-processors</h3>
-      <p class="small"><b>Supabase</b> — database, authentication, storage, edge functions. <b>Lovable</b> — hosting and deployment. <b>Sentry</b> — error monitoring in production, and error reports can incidentally carry user identifiers. <b>Google Gemini via the Lovable AI gateway</b> — the coach assistant and the player feedback screen send prompt content off-platform.</p>
-      <p class="small">That last one deserves attention: the feedback prompt includes <b>a child's first name, position, six category scores and the coach's written note</b>. Whether that leaves the EU, and on what basis, is a direct question for the lawyer.</p>
+      <h3>Supabase Auth and email</h3>
+      <p class="small">Auth processes identities, credentials and sessions. For a child without email, the guardian-created username maps to an internal address under <code>child.trakfootball.com</code>; this is not a mailbox. Create/reset handlers pass passwords to Auth without storing them in application tables or returning them. Reset attempts to end existing child sessions and reports a partial outcome if that step fails.</p>
+      <p class="small">Roster emails carry the recipient address and invitation context, including child first name and organization name. Auth's invitation and sign-in APIs deliver them. The actual Auth delivery provider, dashboard templates, expiry settings, message/log retention and processing regions need operational confirmation. J8 also requires a general event-email sender; its provider, region and from address are open in TRAK-126.</p>
     </div>
     <div class="card">
-      <h3>Named roles</h3>
-      <p class="small">The pilot needs a <b>named data owner</b> — a person, not a company — and a decision on <b>who is controller and who is processor</b> between Trak and the academy. That answer changes who collects the parental consents and who answers a subject access request.</p>
-      <p class="small">The academy holds the relationship with the families, which usually points to the academy as controller and Trak as processor. It is worth confirming rather than assuming, because the consent-collection burden follows it.</p>
+      <h3>Hosting and monitoring</h3>
+      <p class="small">Vercel hosts the web app. Supabase provides database, Auth, storage and Edge Functions. Sentry initializes only in production with a configured DSN; browser tracing samples at 10%, and no session-replay integration is configured. Error and request data need a declared scope and retention period.</p>
+      <p class="small">Regions, actual service configuration and transfer arrangements are unverified here. Supplier headquarters and hostname hints do not establish where processing occurs.</p>
     </div>
     <div class="card">
-      <h3>Retention</h3>
-      <p class="small">Nothing in the schema expires. Every table above keeps rows indefinitely, including telemetry and free-text notes about children. The DPA needs a retention period per category and an answer to what happens to a player's history when they leave the academy — which is the exact scenario Trak's pitch is built around.</p>
+      <h3>Historical media and AI</h3>
+      <p class="small">The pilot blocks avatar reads, uploads and changes by app roles, and blocks new avatar URLs. Historical storage objects, previously issued links and cached copies require separate review. The three older AI handlers return <code>PILOT_FEATURE_DISABLED</code>; the old gateway is not active pilot processing in this source baseline.</p>
     </div>
     <div class="card">
-      <h3>Portability</h3>
-      <p class="small">Account deletion exists; <b>data export does not</b>. GDPR gives a right to portability alongside erasure, and the pilot's week-8 step promises to "hand the academy their data". Neither is currently possible through the product. For a pilot this size it can be a manual SQL export, but the commitment should be written down.</p>
+      <h3>Operator files and recovery</h3>
+      <p class="small">Roster files, support correspondence, exports, correction evidence and backup/restore material can exist outside application tables. Their storage, access and deletion procedures remain to be agreed.</p>
+      <p class="small"><b>Operating record:</b> TRAK-23, 2 October 2026, records daily backups retained for seven days, no point-in-time recovery (PITR) and an unrehearsed restore. The current pilot decision also excludes staging. These arrangements have not been reverified in the dashboard. The <a href="release/s5-restore-rehearsal.md">restore document</a> must state coverage, evidence and limitations. The academy has not yet been briefed.</p>
     </div>
   </div>
 </section>
 
-<section>
+<section aria-labelledby="planned">
   <div class="sec-head">
-    <div class="eyebrow">04 &nbsp;Order of work</div>
-    <h2>What to do, and in what order</h2>
-    <p class="small">The first two are engineering and can be done today. The rest need the lawyer or the academy, so they should be started today even though they finish later.</p>
+    <div class="eyebrow">04 &nbsp;Confirmed requirements, implementation pending</div>
+    <h2 id="planned">J8 events and post-pilot data</h2>
+    <p class="small">TRAK-25, updated 8 October 2026 at 14:19 UTC, has nine launch checks and 18 slices (TRAK-124–141), all Todo when reviewed. These planned categories are additional to the source inventory above. They do not increase its current table count or establish deployed behaviour.</p>
   </div>
-
   <div class="card">
-    <ol class="steps">
-      <li><b>Drop <code>wellness_logs</code></b> once confirmed empty. Removes a special-category liability that currently buys nothing.</li>
-      <li><b>Test the deletion path</b> on a fully populated throwaway account, and extend it to <code>telemetry_events</code> if it does not already reach there.</li>
-      <li><b>Send the lawyer this inventory</b> with the four issues in section 01. Those are specific enough to be answered in one sitting, unlike the open questions in the July brief.</li>
-      <li><b>Settle controller versus processor</b> with the academy, because the consent-collection burden follows it &mdash; and consent cannot be drafted until it is settled.</li>
-      <li><b>Draft the parental consent</b> once 3 and 4 are answered. It must name the categories in section 02, the sub-processors in section 03, the retention period, and the deletion and export rights.</li>
-      <li><b>Name the data owner</b> &mdash; a person at the academy and a person at Trak.</li>
-    </ol>
+    <h3>Events belong in the first real-child pilot</h3>
+    <p class="small">J8 requires scheduling and weekly repetition, kit for matches, parent absence reports, fixture import, family app views, personal phone-calendar subscriptions, changes/reminders, manual sharing and conversion to completed sessions. The nine checks include one-tap subscription and a real-phone rehearsal across Apple, Google and Outlook, followed by J1–J7 and G1–G7 regression proof on the same build.</p>
   </div>
-
-  <div class="callout">
-    <p><b>Steps 3 and 4 are the ones that can move the pilot date.</b> Everything else is hours of work under your own control. Send the email today even if the rest is unfinished.</p>
+  <div class="tbl-scroll">
+    <table>
+      <caption class="small">Planned J8 processing; implementation and deployed evidence pending</caption>
+      <thead><tr><th scope="col">Flow</th><th scope="col">Planned data</th><th scope="col">Agreed boundary</th></tr></thead>
+      <tbody>
+        <tr><td>Events and series</td><td>Academy/squad, type, date/time, duration, meet time, venue/saved venues; opponent, home/away, kit; status, cancellation reason, series ID and change sequence.</td><td>Owning coach writes behind the organization switch. Families see their squad/linked child's events with active consent. Weekly repetition creates dated rows through an inclusive end date in Dubai time. Cancellation retains the event.</td></tr>
+        <tr><td>Fixture import</td><td>CSV fixture fields; PDF source material if that path is selected; preview corrections and confirmed events.</td><td>CSV is read in the browser, previewed and confirmed before saving; repeat imports deduplicate. PDF method is open: local typed-PDF parsing or operator conversion. No AI parsing. Do not assume a server file store for browser-only import.</td></tr>
+        <tr><td>Personal calendar link</td><td>Person/account, token hash, label, created/revoked/last-fetch metadata and authorized event feed.</td><td>One personal link per person; possession of the token authorizes access without an app login. Parent scope covers children with active consent; player scope is their squad. Stable event IDs and sequences; cancelled entries retained. No child names or coach notes.</td></tr>
+        <tr><td>Extra family links</td><td>Guardian-created label, token hash, selected child/all-child and matches/all-event scope, lifecycle/fetch metadata.</td><td>Optional named links for relatives/drivers without accounts, each revocable separately and tied to the guardian's continuing access. Same no-child-name feed rule. Low-priority J8 slice, not an implemented capability.</td></tr>
+        <tr><td>App change notices</td><td>New/changed/cancelled event state and per-user seen/opened state.</td><td>Parent bell is scoped to the selected child; player sees their squad. No coach message or private note added to parent views.</td></tr>
+        <tr><td>Event emails</td><td>Guardian addresses, event/old-to-new details, reminder preferences, grouping and send/deduplication/retry outcomes.</td><td>Today/tomorrow changes reach consented guardians; same-day delivery target is 60 seconds. Two-day reminders group all children's events into one guardian email per day. Settings opt-out; no state-changing email links. No child names in subjects or coach notes/messages. Player change-email recipients remain open.</td></tr>
+        <tr><td>Absence and completed register</td><td>Event/child, reporting guardian, time, optional short reason; later confirmed attendance and completed session link.</td><td>Only linked guardians with active consent report “Can't make it”, undoable until start. Coach sees own-squad absences; families never see other children's absences. Expected attendance is the default, not a completed record. Coach reviews/saves after the event through the consent-checked session path; no duplicate session on retry.</td></tr>
+        <tr><td>Manual WhatsApp share</td><td>Squad, type, date/time, venue, meet time, kit and cancellation details in prefilled text.</td><td>Coach selects recipient/group and sends in WhatsApp. No child names or absence list; no automatic posting or account integration. Shared text creates copies outside Trak.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Calendar privacy requirements are specified</h3>
+      <p class="small">Withdrawal, departure or revocation must stop child data on the next feed request, including affected extra links. Regenerating a personal link revokes the old one. This does not promise immediate deletion from provider/device caches. Last fetched records a request, not a reader's identity or understanding. Time and venue disclose where a squad trains even without child names.</p>
+      <p class="small">Counsel must see the feed privacy design before real families receive links. One-tap setup has an easy skip and Settings access later. Apple, Google and Outlook subscription behaviour must be proved on real devices; direct provider-account connections are outside J8.</p>
+    </div>
+    <div class="card">
+      <h3>Actual open choices</h3>
+      <p class="small">Event email provider, region and from address (TRAK-126); local PDF parser/dependency versus operator conversion (TRAK-129); feed endpoint location (TRAK-132); verified Android subscription fallback if needed (TRAK-133); and whether players with email receive change notices (TRAK-135, guardians only by default). Lifecycle periods, notices, rights handling, provider terms and the review of free-text/cached/shared copies remain counsel and operational questions.</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Post-pilot</h3>
+    <p class="small">Lineups and broader matchday planning remain parked. A reminder only to the coach on the child's birthday would reuse roster DOB. Preferred foot and additional profile statistics entered by the coach are planned later; a UAE FA statistics sync is only a possibility, with source access, permission, identity matching, corrections and fields unresolved. <b>No height or weight.</b> Existing assessments and match statistics remain part of the current inventory.</p>
   </div>
 </section>
 
+<section aria-labelledby="rights">
+  <div class="sec-head">
+    <div class="eyebrow">05 &nbsp;Lifecycle and legal review</div>
+    <h2 id="rights">Withdrawal, deletion and export have different scopes</h2>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Withdrawal and retention</h3>
+      <p class="small">Withdrawal blocks covered development writes and hides covered content through ordinary family read policies while approval is required. Retained player-logged matches have a read exception, and account export does not apply the same consent predicate. Withdrawal does not erase data; reapproval can restore ordinary visibility. Consent evidence intentionally outlives roster/account deletion. Coach departure also preserves selected history while closing former-coach access.</p>
+      <p class="small">Set periods for each category, including unclaimed rosters, notes, consent, telemetry, correction audit, backups and external files. Invitation expiry and a stale-consent review report do not supply a general retention policy.</p>
+    </div>
+    <div class="card">
+      <h3>Account deletion</h3>
+      <p class="small"><code>delete_my_account()</code> removes many linked records and triggers cascades, including the user's telemetry. It preserves some coach history and does not delete consent evidence. It cannot by itself establish removal of supplier logs, backups, email, calendar caches or operator files. Do not claim complete erasure or a current successful rehearsal from source inspection.</p>
+    </div>
+    <div class="card">
+      <h3>Account export</h3>
+      <p class="small"><code>export_my_account()</code> exists and returns data scoped to the caller's role. The source switch includes coach observations about a player. Parent export includes the parent's own links/consents, not a complete child export. The child's application export excludes private coach notes.</p>
+      <p class="small">The export function executes with elevated database privileges; its player branch reads own matches, assessments and awards without the family consent predicate. Source logic therefore retains that export access after withdrawal. Whether this is intended, and how it should be explained alongside withdrawal and rights handling, needs an engineering/counsel decision. No live test is asserted.</p>
+      <p class="small">The latest definition predates roster/child-login additions and omits those categories, shared coach messages and training attendance. Its software scope does not determine the scope of a reviewed access or portability request.</p>
+    </div>
+    <div class="card">
+      <h3>Questions for counsel and operators</h3>
+      <p class="small">Agree applicable law, classification, any impact assessment, controller/processor roles, initial roster-transfer basis, parental authority, notice and consent scope, rights handling, retention, transfers, supplier terms and incident contacts/procedure. Confirm how private notes and third-party information are reviewed. The academy meeting and counsel review remain pending.</p>
+      <p class="small">Makis's <a href="https://github.com/kostasanastasioubusiness-lang/trak-football-hub/pull/247">PR #247</a> is a separate preliminary paper. He decides its retention and updates and the disposition of the older legal documents; this inventory provides facts and questions.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="sources">
+  <div class="sec-head">
+    <div class="eyebrow">06 &nbsp;Evidence</div>
+    <h2 id="sources">Source references</h2>
+    <p class="small">Read later migrations as corrections to earlier ones. Historical comments and generated client types do not override the latest definitions. Operational deployment proof belongs in the release evidence.</p>
+  </div>
+  <ul class="plain">
+    <li>Admission: <a href="../supabase/migrations/20260925150000_roster_admission.sql">roster data</a>, <a href="../supabase/migrations/20260926170000_roster_only_squad_admission.sql">roster-only squad creation</a>, <a href="../supabase/migrations/20260928120000_roster_child_without_email.sql">optional child email</a>, <a href="../supabase/migrations/20260930090127_guardian_child_logins.sql">child logins</a>, <a href="../supabase/migrations/20261001120000_roster_email_correction.sql">email audit</a>.</li>
+    <li>Consent: <a href="../src/lib/consent.ts">displayed purposes/version/statement</a>, <a href="../src/lib/parent-consent.ts">approval client</a>, <a href="../supabase/migrations/20260919120002_consent_requires_coaching_records_purpose.sql">purpose gate</a>, <a href="../supabase/migrations/20260927090000_roster_consent_before_account.sql">pre-account approval and preserved evidence</a>, <a href="../supabase/migrations/20260926140000_consent_on_every_development_write.sql">development writes</a>, <a href="../supabase/migrations/20260927130000_family_reads_follow_consent.sql">family reads</a>.</li>
+    <li>Access: <a href="../supabase/migrations/20260608000005_org_scoped_rls.sql">scoped admin access</a>, <a href="../supabase/migrations/20260918135500_private_notes_and_shared_feedback.sql">private notes and published messages</a>, <a href="../supabase/migrations/20260926120000_parents_do_not_read_coach_messages.sql">parent message exclusion</a>, <a href="../supabase/migrations/20260926150000_family_training_history.sql">family training projection</a>.</li>
+    <li>Parked/retained: <a href="../supabase/migrations/20260924000002_parked_feature_writes.sql">calendar and awards</a>, <a href="../supabase/migrations/20260924130000_close_meeting_requests_to_app_roles.sql">meeting requests</a>, <a href="../supabase/migrations/20260926160000_staff_compliance_parked.sql">staff compliance</a>, <a href="../supabase/migrations/20260923110906_pilot_g7_disable_media_and_ai.sql">media/AI boundary</a>, <a href="../supabase/migrations/20260608000003_admin_tables.sql">admin note policies</a>.</li>
+    <li>Lifecycle: <a href="../supabase/migrations/20260901000007_drop_wellness_logs.sql">wellness drop</a>, <a href="../supabase/migrations/20260901000008_drop_player_goals_and_fix_deletion.sql">goals drop and deletion</a>, <a href="../supabase/migrations/20260922091647_restrict_departed_coach_exports.sql">current export</a>.</li>
+    <li>Operations: <a href="../supabase/migrations/20260926130000_pilot_j7_measure.sql">J7 reports</a>, <a href="../src/main.tsx">monitoring</a>, <a href="../supabase/functions/send-roster-invites/handler.ts">roster email</a>, <a href="../supabase/functions/create-child-login/handler.ts">child creation</a>, <a href="../supabase/functions/reset-child-password/handler.ts">child reset</a>, <a href="../src/pages/coach/CoachAddSession.tsx">routed coach match input</a>.</li>
+  </ul>
+</section>
+</main>
 </div>
+</body>
+</html>

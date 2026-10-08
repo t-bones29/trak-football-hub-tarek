@@ -1,6 +1,10 @@
 # Trak Football
 
-Performance tracking app for youth football players, coaches, parents, and club admins.
+Youth football coaching records for players, coaches and linked guardians.
+The first pilot's required journeys, including events, are defined in
+[MVP Requirements](MVP%20Requirements); recorded evidence is in
+[PILOT-INDEX](docs/use-cases/PILOT-INDEX.md). A feature's presence in the source
+does not establish that it is admitted to the pilot.
 
 ## Prerequisites
 
@@ -19,15 +23,15 @@ cd trak-football-hub
 # If you use nvm:
 nvm install
 nvm use
-npm ci
+npm ci --legacy-peer-deps
 
 # 3. Configure environment
 cp .env.example .env
 # Edit .env and fill in your Supabase URL and publishable key (sb_publishable_…)
 
-# 4. Apply database migrations
-# Open your Supabase project → SQL Editor
-# Run each file in supabase/migrations/ in chronological order
+# 4. Use a disposable development database
+# Replay migrations in filename order; see AGENTS.md.
+# Never run development SQL against the shared production project.
 
 # 5. Start the dev server
 npm run dev
@@ -40,8 +44,10 @@ Without nvm, install Node 22 some other way. npm refuses a different Node major 
 ## Running Tests
 
 ```bash
-npm test          # watch mode
-npm test -- --run # single run (used in CI)
+npm test            # source tests, once (used in CI)
+npm run test:watch  # watch mode
+npm run test:harness
+npm run uc:check    # enforced use cases block; pending failures are reported
 ```
 
 ## Linting & Build
@@ -139,13 +145,18 @@ supabase/
 
 | Role | Sign-up path | Key features |
 |---|---|---|
-| **Player** | Invite code from coach | Match history, evolution card, passport, coach feedback |
-| **Coach** | Direct sign-up | Squad management, assessments, match logging, AI assistant |
-| **Parent** | Link token from player | View child's matches, assessments, alerts |
-| **Club admin** | Direct sign-up (club role) | Cross-squad overview, movement radar |
+| **Player** | Academy roster, guardian consent, then email invitation or guardian-created username/password | Bands, coach message, coach-recorded history |
+| **Coach** | Coordinated academy setup | Squad, completed sessions, attendance and assessments |
+| **Parent** | Academy-supplied guardian address and invitation | Consent, selected child's bands/history, child activation and recovery |
+| **Club admin** | Coordinated academy setup | Academy console remains coming soon |
+
+J8 events and family calendars are required for launch and still await their
+implementation and deployed rehearsal. AI, recognition, passport/sharing and
+child photos remain outside the pilot.
 
 ## Contributing
 
-1. Create a feature branch off `main`
-2. Run `npm test -- --run` and `npm run build` before pushing
-3. CI (GitHub Actions) runs lint + test + build automatically on every push
+Read [AGENTS.md](AGENTS.md) and [the release gate](docs/release/merge-gate.md)
+before editing. Work on the assigned issue in a branch, record checks and
+limitations, and obtain an independent review. The CI workflow defines its
+triggered branches and checks; a local commit alone does not run it.

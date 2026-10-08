@@ -1,4 +1,8 @@
-# Single source of truth for Trak's application use cases.
+# Test-harness contracts for Trak's application use cases.
+# Current pilot scope: MVP Requirements (J1–J8). Deployment evidence:
+# docs/use-cases/PILOT-INDEX.md. Enforced/pending/parked are harness statuses.
+# Historical REQ identifiers and commit-pinned sources retain provenance;
+# they do not re-admit a parked feature to the pilot.
 # Product-owner-owned. Changing a given/when/then requires bumping that
 # entry's spec_version — scripts/uc-check.mjs enforces this via
 # registry.lock.json.
@@ -32,7 +36,7 @@ use_cases:
       - A matches row is persisted with a computed rating
       - They are taken to the result screen for that match
       - No decimal number is rendered anywhere in the UI
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # PARKED 2026-09-21. Imad confirmed coach-only match logging for the pilot;
   # academy-led admission has no athlete self-reporting path. The route these
@@ -61,7 +65,7 @@ use_cases:
       - The band word for the computed score is shown
       - The band word is rendered in that band's configured colour
       - No decimal number is rendered anywhere in the UI
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # ENFORCED 2026-09-21. Its test passed on every uc:check run since the
   # 2026-09-21 merges; Imad approved promoting it (Tarek's offer, #77 thread).
@@ -78,7 +82,7 @@ use_cases:
       - Every logged match appears as a card
       - An athlete with no matches sees an explicit empty message
       - A failed load is distinguishable from an empty history
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # PARKED 2026-09-23 (Q-2026-09-23-01, TRAK-19). Goals are cut from the pilot (MVP Requirements, "Cut from the pilot"; TRAK-32).
   # The PO's original words are kept so the decision stays auditable.
@@ -94,7 +98,7 @@ use_cases:
     then:
       - The goal is persisted and appears in their goals list
       - The goals screen is reachable from the athlete navigation
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # PARKED 2026-09-23 (Q-2026-09-23-01, TRAK-19). Medals, recognition and awards are cut from the pilot (TRAK-31).
   # The PO's original words are kept so the decision stays auditable.
@@ -110,7 +114,7 @@ use_cases:
     then:
       - Every earned medal is shown as earned
       - Medal eligibility is evaluated from their real match history
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # PARKED 2026-09-23 (Q-2026-09-23-01, TRAK-19). J1: children do not join by typing a name or a coach code; the academy roster and the invitation decide who is in (TRAK-36).
   # The PO's original words are kept so the decision stays auditable.
@@ -127,7 +131,7 @@ use_cases:
       - The squad row is linked to their account
       - The coach and athlete are genuinely connected in the database
       - An invalid or already-claimed code is rejected with a reason
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   - id: UC-A09
     actor: athlete
@@ -142,7 +146,7 @@ use_cases:
       - The assessment's overall band is shown
       - All six category scores are shown as bars
       - The coach's private note is never shown to the athlete
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # PARKED 2026-09-23 (Q-2026-09-23-01, TRAK-19). J1/J2: the academy supplies every guardian email; a child does not generate a parent code (TRAK-36, TRAK-38).
   # The PO's original words are kept so the decision stays auditable.
@@ -158,13 +162,13 @@ use_cases:
     then:
       - A unique PAR-XXXX code is stored against their account
       - The same code is shown to them until it is redeemed
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # REWRITTEN 2026-09-23 (Q-2026-09-23-01, TRAK-19). J1: "coaches do not add
   # players" — the academy roster is loaded by Trak (concierge). The old
   # spec asserted the opposite, so this is a spec change, not a weakened test.
-  # Pending until TRAK-47 removes /coach/squad/add; TRAK-48 covers the backend
-  # refusal under real roles.
+  # TRAK-47 removed the route; TRAK-48 covers backend refusal. It remains
+  # pending in this harness; deployment evidence is recorded in PILOT-INDEX.
   - id: UC-C02
     actor: coach
     title: Coaches do not add players; the academy roster decides the squad
@@ -195,7 +199,7 @@ use_cases:
       - Every player in their squad is listed
       - A coach with an empty squad sees an explicit empty message
       - A failed load is distinguishable from an empty squad
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # SPEC v2 2026-09-25 (TRAK-68): Imad decided an assessment belongs to a
   # session that already happened, so the session is required. v1 had it
@@ -214,7 +218,7 @@ use_cases:
       - A coach_assessments row is persisted with all six category scores and the chosen session
       - A band derived from the six scores is shown before submitting
       - Submitting is refused until a player and a session are selected
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # PARKED 2026-09-23 (Q-2026-09-23-01, TRAK-19). J1: coach TRK- codes are not an admission path in the pilot (TRAK-36).
   # The PO's original words are kept so the decision stays auditable.
@@ -231,7 +235,7 @@ use_cases:
       - The code is persisted, not generated for display only
       - The same code is returned on every subsequent view
       - No two coaches hold the same code
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # PARKED 2026-09-23 (Q-2026-09-23-01, TRAK-19). Player-entered match logging is parked with UC-A02/A03; the coach logs matches (J4, TRAK-37).
   # The PO's original words are kept so the decision stays auditable.
@@ -248,7 +252,7 @@ use_cases:
       - Each logged match is shown with its band
       - The athlete's self-rating is never shown to the coach
       - The athlete's body-condition input is never shown to the coach
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # PARKED 2026-09-23 (Q-2026-09-23-01, TRAK-19). J2: guardians join through the academy-supplied invitation, not a PAR- code (TRAK-36).
   # The PO's original words are kept so the decision stays auditable.
@@ -264,7 +268,7 @@ use_cases:
     then:
       - The parent account is linked to exactly that child
       - The code cannot be redeemed a second time
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   - id: UC-P02
     actor: parent
@@ -278,36 +282,41 @@ use_cases:
     then:
       - The child's season band is shown
       - A failed load is distinguishable from a child with no matches
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
+  # RECONCILED 2026-10-08 with the decided J4/J6 coach-only logging contract.
+  # v2 changes who logs the match; the family-visibility limits stay intact.
   - id: UC-P03
     actor: parent
-    title: See the child's match feed
-    requirement: REQ-004
+    title: See the child's coach-recorded match feed
+    requirement: J6
     status: pending
     tier: [1, 2]
-    spec_version: 1
+    spec_version: 2
     given: A linked parent
     when: They open the matches screen
     then:
-      - Every match the child logged is listed with its band
+      - Every match the coach logged for the selected child is listed with its band
       - The child's self-rating is never shown to the parent
       - The child's body-condition input is never shown to the parent
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: MVP Requirements
 
+  # RECONCILED 2026-10-08 with TRAK-63 and J6: parents see bands,
+  # never the coach's message or private note. This is still pending coverage.
   - id: UC-P06
     actor: parent
-    title: See the coach's assessments
-    requirement: REQ-004
+    title: See the coach's assessment bands without the message or private note
+    requirement: J6
     status: pending
     tier: [1, 2]
-    spec_version: 1
+    spec_version: 2
     given: A linked parent whose child has been assessed
     when: They open the parent home screen
     then:
-      - The assessment band is shown
+      - The selected child's assessment band is shown
+      - The coach's message is never shown to the parent
       - The coach's private note is never shown to the parent
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: MVP Requirements
 
   # REWRITTEN 2026-09-23 (Q-2026-09-23-01, TRAK-19). The consent threshold is
   # 18, not 13–14, and consent is given by an academy-supplied guardian (J2).
@@ -327,19 +336,25 @@ use_cases:
       - One guardian can consent for siblings without a second account
     source: MVP Requirements
 
+  # RECONCILED 2026-10-08 with TRAK-10's 25–30 Sep decisions and J7.
+  # v1 counted player-entered match logs; J7 measures the coach-led loop.
   - id: UC-T01
     actor: system
-    title: Every enforced use case emits telemetry answering the Q4 metric
-    requirement: REQ-005
+    title: Answer the weekly coach-assessment and family-open counts in one minute
+    requirement: J7
     status: pending
     tier: [2]
-    spec_version: 1
-    given: A pilot in progress
-    when: The founder runs the telemetry query
+    spec_version: 2
+    given: A configured pilot cohort with real UI events and synthetic rehearsal accounts
+    when: An authorized operator runs the weekly pilot measurement query
     then:
-      - Weekly logging players can be counted for any given week
-      - The count matches a manual count of the underlying rows
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+      - Assessments per coach and player and parent opens can be answered in under one minute
+      - Only the configured academy's events count and synthetic accounts are excluded from pilot reporting
+      - Player opens count distinct player and assessment pairs per week when the published message is shown
+      - Parent opens count distinct parent and assessment pairs per week when the assessment bands are shown
+      - Counts match the qualifying underlying events, not raw repeated page views
+      - Showing a message is not represented as proof the child deliberately opened or read it
+    source: MVP Requirements
 
   - id: UC-X01
     actor: system
@@ -352,7 +367,7 @@ use_cases:
     when: One attempts to read the other's rows
     then:
       - The read is rejected rather than returning an empty result
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # ENFORCED 2026-09-21. Its test passed on every uc:check run since the
   # 2026-09-21 merges; Imad approved promoting it (Tarek's offer, #77 thread).
@@ -368,7 +383,7 @@ use_cases:
     then:
       - A retryable error is shown
       - The error is visibly different from the genuine empty state
-    source: docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
+    source: https://github.com/kostasanastasioubusiness-lang/trak-football-hub/blob/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5/docs/superpowers/specs/2026-07-27-trak-pilot-mvp-design.md
 
   # ADDED 2026-09-23 (Q-2026-09-23-01, TRAK-19): use cases for the P0 journeys
   # J1–J4 in MVP Requirements. Pending until a test exists and passes.
@@ -433,19 +448,24 @@ use_cases:
       - Published content about the child is hidden from the family at once
     source: MVP Requirements
 
+  # RECONCILED 2026-10-08 with TRAK-84/103/104/107 and J3.
+  # v2 retains consent-first activation and adds the decided no-email path.
   - id: UC-A11
     actor: athlete
-    title: Activate an account only after a guardian consents
+    title: Activate and recover a rostered child's account only through the approved paths
     requirement: J3
     status: pending
     tier: [1, 2]
-    spec_version: 1
-    given: A child admitted from the academy roster
-    when: Their guardian consents and they open the one-use invitation sent to the academy-supplied email
+    spec_version: 2
+    given: A child admitted from the academy roster, with or without their own email
+    when: Their guardian consents and the family completes the applicable account setup
     then:
-      - No activation invitation is sent before consent exists
-      - The account activates linked to the child's roster row
-      - A reused or expired invitation is refused, and a resend works
+      - Neither an activation invitation nor a guardian-created child login is available before active consent
+      - With a child email, the invitation goes only to the academy-supplied address and the child enters its code at /auth/code
+      - Without a child email, the approved guardian creates the child's username and password
+      - The account is linked to the child's roster row and uses the roster name
+      - Used or expired codes are refused, and after a resend only the newest code works
+      - A guardian can reset their no-email child's password and existing child sessions are invalidated, with an open device signing out within 30 seconds
     source: MVP Requirements
 
   - id: UC-C09
@@ -476,3 +496,127 @@ use_cases:
       - A coach_sessions row is persisted with that date, type and notes
       - A failed save says so and keeps what the coach typed
     source: MVP Requirements
+
+  # ADDED 2026-10-08. TRAK-25's nine decided J8 acceptance checks, one
+  # pending case per check. These are required outcomes, not implementation
+  # or deployment claims. TRAK-124–141 define the implementation slices and
+  # their remaining choices; additional J8 scope is in MVP Requirements.
+  - id: UC-E01
+    actor: coach
+    title: Create eight weeks of training with weekly repeat
+    requirement: J8
+    status: pending
+    tier: [1, 2]
+    spec_version: 1
+    given: A coach scheduling training for their squad
+    when: They create eight weeks of training in one operation using weekly repeat
+    then:
+      - The eight-week schedule is created in under two minutes
+    source: https://linear.app/trak-football/issue/TRAK-25
+
+  - id: UC-E02
+    actor: system
+    title: Deliver event changes and cancellations to affected families
+    requirement: J8
+    status: pending
+    tier: [1, 2]
+    spec_version: 1
+    given: A scheduled event with affected players and parents
+    when: The coach changes or cancels the event
+    then:
+      - Every affected player and parent sees the change or cancellation on their next app load
+      - The change or cancellation appears in the parent's bell
+      - A same-day change or cancellation also reaches guardians by email within 60 seconds
+    source: https://linear.app/trak-football/issue/TRAK-25
+
+  - id: UC-E03
+    actor: system
+    title: Keep Apple, Google and Outlook calendar subscriptions consistent
+    requirement: J8
+    status: pending
+    tier: [2]
+    spec_version: 1
+    given: Families subscribed to event calendars in Apple, Google and Outlook on real phones
+    when: Events are created, changed or cancelled and each subscribed calendar refreshes
+    then:
+      - Each calendar shows the new, changed and cancelled events without duplicates
+    source: https://linear.app/trak-football/issue/TRAK-25
+
+  - id: UC-E04
+    actor: parent
+    title: Remove event access after consent withdrawal
+    requirement: J8
+    status: pending
+    tier: [1, 2]
+    spec_version: 1
+    given: A child's events are available in the app and through a calendar link
+    when: The guardian withdraws consent
+    then:
+      - The child's events are removed from the app and calendar link on the next request
+    source: https://linear.app/trak-football/issue/TRAK-25
+
+  - id: UC-E05
+    actor: system
+    title: Refuse cross-academy event visibility
+    requirement: J8
+    status: pending
+    tier: [2]
+    spec_version: 1
+    given: Events belonging to two different academies
+    when: SQL access checks run as the real authenticated roles
+    then:
+      - No event from one academy is visible to another academy
+    source: https://linear.app/trak-football/issue/TRAK-25
+
+  - id: UC-E06
+    actor: system
+    title: Keep children's names out of calendar entries
+    requirement: J8
+    status: pending
+    tier: [2]
+    spec_version: 1
+    given: An event shared through a family calendar subscription
+    when: Its calendar entry is generated
+    then:
+      - No child's name appears in the calendar entry
+    source: https://linear.app/trak-football/issue/TRAK-25
+
+  - id: UC-E07
+    actor: coach
+    title: Convert a past event into a completed session with attendance
+    requirement: J8
+    status: pending
+    tier: [1, 2]
+    spec_version: 1
+    given: An event whose scheduled time has passed
+    when: The coach completes it
+    then:
+      - The event becomes the completed session with attendance in one step
+      - The existing J4 and J5 test suites stay green
+    source: https://linear.app/trak-football/issue/TRAK-25
+
+  - id: UC-E08
+    actor: system
+    title: Rehearse events on two real phones before real-family access
+    requirement: J8
+    status: pending
+    tier: [2]
+    spec_version: 1
+    given: Production with synthetic families and Apple, Google and Outlook calendar apps
+    when: The event journey is rehearsed on two phones
+    then:
+      - The rehearsal passes with all three calendar apps before any real family receives events
+    source: https://linear.app/trak-football/issue/TRAK-25
+
+  - id: UC-E09
+    actor: system
+    title: Subscribe a family member's phone calendar in one tap from signup
+    requirement: J8
+    status: pending
+    tier: [2]
+    spec_version: 1
+    given: A parent or player signing up on iPhone, Android with Google, or Outlook
+    when: They add Trak to their phone calendar from signup
+    then:
+      - One tap subscribes their phone calendar to Trak
+    source: https://linear.app/trak-football/issue/TRAK-25

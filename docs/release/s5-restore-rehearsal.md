@@ -1,231 +1,239 @@
-# S5 — restore rehearsal
+# S5 — recovery procedure and restore rehearsal
 
-Owner: Kostas. Status: **not yet executed.** This document is the procedure and the evidence
-template. It is not evidence that a restore works.
+Owner: Kostas. Updated 8 October 2026. **Restore remains unrehearsed; no recovery
+duration has been measured.** This is an unexecuted procedure, not recovery proof.
 
-> **Update, 23 Sep (TRAK-23).** Scope changed after this was written. Real children join only
-> after the launch gate in `MVP Requirements` passes and a founder majority says go; there is no
-> "Monday" admission. Child photos are parked (G7), so the avatar-bucket gap below applies only if
-> photos return. Gate 6 accepts a backup plus this written runbook with the restore **not**
-> rehearsed, provided the go decision records that risk. The PITR decision is TRAK-46.
+## Accepted risk and pending disclosure
 
-`docs/pilot-readiness-2026-09-25.md` lists, among the gates that must pass before a real child
-signs up: *"Restore rehearsal evidence and duration (Kostas S5), not merely an available backup."*
-Eight completed physical backups exist (Imad, read-only in the production dashboard, 22 Sep, latest
-`2026-09-22 05:50:03 UTC`; PITR is **not** enabled). **That fact does not close S5.** What closes
-S5 is a measured recovery: how long it takes to get `trakfootball.com` serving correct data again,
-and what does not come back.
+The decision on TRAK-23, 2 October 2026 at 19:18:57 UTC, supersedes the older open
+TRAK-46 note: daily backups retained for seven days, no point-in-time recovery
+(PITR), and acceptance of the unrehearsed
+restore risk for the pilot. There is no staging environment. A second synthetic
+academy inside production is an isolation fixture, not a separate environment or
+backup.
 
-## What this rehearsal is actually measuring
+**The academy has not been briefed. Disclosure is pending**, with a meeting expected
+in the coming weeks. Record that disclosure and the accepted risk in the launch
+decision. A backup and this written procedure do not establish a recovery time or
+prove that all application services can be restored. Admission still requires the
+full [MVP launch gate](../../MVP%20Requirements), including J8, and founder-majority go.
 
-A physical backup restores **one Postgres database into a new Supabase project**. It does not
-restore a service. The restored project has a **new project ref**, and that ref is hard-coded in
-**eight files** outside documentation, plus the platform configuration. So the recovery clock is
-dominated by a code change and a CI deploy, not by the restore.
+Before relying on a backup, Kostas must inspect the actual available backups and
+record the selected timestamp, completion state and retention window. The 2 October
+decision is not evidence that today's backup succeeded. Writes after the selected
+backup may be lost; measure that interval in an incident rather than promising a
+fixed maximum.
 
-Measure the whole thing or the number is meaningless. `T0` is the decision to restore; `T_done` is
-a designated synthetic account completing a real journey on `trakfootball.com` against the restored
-backend.
+## What must be recovered
 
-## Production pre-state
+This procedure uses a restore into a new project. Supabase documents that it copies
+the database, while service configuration needs further work. Recheck these
+[restore-to-new-project requirements](https://supabase.com/docs/guides/platform/clone-project)
+when executing:
 
-Read-only, measured by Kostas on **2026-09-22 ~19:20 EEST** against `xbykbqolvqyqmipikuae`
-(`eu-central-1`, PostgreSQL 17.6, 15 MB). No writes were made. Re-measure immediately before a
-restore rather than trusting these; they are here so the verification step has something to compare
-against and so a silently empty restore cannot read as success.
+- Restore the selected database and validate schema, data, grants, policies and Auth
+  records against a captured baseline, allowing for writes newer than the backup.
+- Restore/deploy edge functions from the reviewed source and `supabase/config.toml`;
+  do not rely on the old four-function inventory.
+- Reconfigure Auth settings, API keys, SMTP, redirect allow-list, function secrets
+  and any applicable Realtime or extension settings. Export the actual settings
+  securely before execution; do not reconstruct them from an old document.
+- Storage file bytes are not included in database backups. Metadata can survive
+  without its file: an empty `storage.objects` result is not the expected recovery
+  test. Verify required objects separately. Child photos remain out of pilot scope.
+  See [Supabase backup limitations](https://supabase.com/docs/guides/platform/backups).
 
-| | |
-|---|---|
-| migrations applied | **83**, latest `20260921120000` |
-| `auth.users` | 36 |
-| RLS | **24 of 24** public tables, 97 policies |
-| `SECURITY DEFINER` functions in `public` | 48 |
-| extensions | `pg_stat_statements` 1.11, `pgcrypto` 1.3, `uuid-ossp` 1.1, `supabase_vault` 0.3.1, `plpgsql` 1.0 |
-| non-system schemas | `auth, extensions, graphql, graphql_public, public, realtime, storage, supabase_migrations, vault` |
-| storage | bucket `avatars` (`public=false`), **2 objects** |
-| edge functions | 4 ACTIVE — `coach-assistant`, `parse-schedule`, `player-feedback`, `send-parent-invite` |
+Database extensions that perform external work may run immediately in a restored
+project. Inspect scheduled jobs, webhook triggers and other outbound integrations
+before starting; a rehearsal must not contact real families or repeat production
+side effects. If this cannot be controlled, resolve the isolation method before
+executing the restore.
 
-Row counts, largest first:
+Email templates are dashboard configuration, not CI output. The repository's four
+legacy templates are awaiting Kostas's live export (TRAK-107); do not restore them
+from the repository. Preserve and verify the code-based invitation, sign-in and
+password-recovery templates, their SMTP configuration, `/auth/code` flow and the
+`/reset-password` destination. **Confirm signup stays separate:** preserve its
+`/auth/confirm` verification-then-sign-out flow (TRAK-117); do not convert it to
+`/auth/code`, which accepts only invitation, sign-in and recovery types. Keep
+exports containing private configuration out of the public repository.
 
+### Planned J8 services and access state
+
+The expanded [TRAK-25](https://linear.app/trak-football/issue/TRAK-25) scope has nine
+acceptance checks and 18 implementation issues, all Todo when reviewed on 8 October.
+It introduces recovery concerns that must be added to an executed procedure once
+the services exist; this document supplies no invented tables or commands:
+
+- Capture per-academy event-switch state and prove off/missing/error settings fail
+  closed, including database writes (TRAK-124). Restore must not enable events for
+  an academy that was disabled after the backup.
+- Reconcile personal and extra family/driver feed links, revocations, replacements,
+  guardian/child access and departures (TRAK-132/133/140). The planned store holds
+  token hashes; a database backup does not recover the original bearer URLs. An old
+  backup can revive an old hash/revocation state, so reconcile later revocations
+  before permitting requests. Validate every still-valid link after a target change;
+  the feed endpoint remains undecided. Cached phone entries are a separate limitation.
+- Configure the new ordinary-email sender separately from Supabase Auth mail.
+  Provider, region, sender and server-side secrets remain to be selected (TRAK-126).
+  Do not assume an Auth template or SMTP setting recovers event notifications.
+- Inspect urgent-change delivery state and two-day reminder schedules, opt-outs,
+  retry/deduplication records and job failures (TRAK-135/136). Restoring old state
+  must not resend already delivered notices, send stale changes or ignore a later
+  opt-out. Keep outbound work controlled until this is reconciled; no approved
+  scheduler installation or retry procedure is established here.
+- Compare events, cancellations, fixture imports, reported absences and completed
+  attendance to the backup age (TRAK-129/137/138). Do not recreate events through
+  an import or register retry without proving duplicate protection.
+
+These checks do not establish recovery readiness. Record implementation gaps and
+keep the affected service paused when reconciliation cannot be proved.
+
+## Prepare the target and record the baseline
+
+Kostas confirms the target, current dashboard cost and rehearsal cleanup plan
+before starting a charged restore. Keep the original project intact. There is no
+standing staging project to reuse.
+
+Capture current source commit, applied migration versions, table counts, RLS and
+grant definitions, function definitions, relevant settings and available backup
+timestamps in an authorized private record. Counts from September are not expected
+values for a new run. Never include credentials, tokens or family data in public
+proof.
+
+Before repointing anything, find every source and configuration reference to the
+current project:
+
+```bash
+rg -n 'xbykbqolvqyqmipikuae|SUPABASE_PROJECT_ID|SUPABASE_DB_URL|VITE_SUPABASE' \
+  .github src supabase scripts e2e vercel.json seed-admin-data.mjs
 ```
-telemetry_events 558 · session_attendance 146 · coach_assessments 135 · matches 89
-squad_players 73 · profiles 35 · coach_calendar_events 20 · player_details 16
-coach_sessions 10 · recognition_awards 10 · coach_assessment_notes 9 · coach_details 8
-parent_invites 8 · player_parent_links 7 · ai_usage_daily 3 · organizations 2
-parental_consents 1 · pilot_config 1
-admin_notes 0 · ai_feedback_drafts 0 · coach_shared_feedback 0 · meeting_requests 0
-player_feedback 0 · staff_compliance 0
-```
 
-Two things in that snapshot are worth naming rather than leaving in a table. `trak_private` does
-not exist yet, so #99 is not deployed. And the live storage policy is still
-`"Avatars are publicly readable" FOR SELECT` — the Monday exposure, open at the time of writing.
-
-**Superseded, 23 Sep:** #99 is deployed (`trak_private` exists) and #113 closed the public avatar
-read on production (TRAK-42). Both are why step 0 re-measures instead of trusting this table.
-
-## What a restore does NOT bring back
-
-This is the part S5 exists to establish, and the part that a "we have backups" answer hides.
-
-1. **Storage objects are excluded from the physical backup.** Avatars are not recovered. Today
-   that is synthetic objects only. If child photos return after the pilot, a restore would
-   silently produce profiles whose `avatar_url` points at objects that no longer exist — the
-   dangling case `scripts/ops/purge-avatar-object.mjs` reports. **There is currently no backup of
-   the `avatars` bucket at all.** That is a separate gap from S5 and it is not closed by this
-   procedure.
-2. **Edge functions are not in a database backup.** All four are in the repository and redeploy
-   from CI, so this costs a pipeline run, not authorship.
-3. **Edge function secrets are not in a backup and are not in the repository.** `LOVABLE_API_KEY`
-   and `SITE_URL` must be set by hand on the restored project. The `SUPABASE_*` variables are
-   injected by the platform.
-4. **Auth configuration is not in a backup.** The redirect allow-list must be re-created, including
-   the exact `https://www.trakfootball.com/reset-password` entry that #102's recovery flow depends
-   on — Tarek probed that allow-list on 22 Sep and a fallback-to-root link does not work, so a
-   missing entry locks every parent out of password recovery. Email templates are set by hand and
-   are not deployed by CI. The same goes for **custom SMTP settings**, which TRAK-51 is likely to
-   configure for J2's under-60-second invitation delivery: without them, the restored project falls
-   back to the default sender and J2's delivery requirement no longer holds.
-5. **A new project has new JWT keys.** Every session issued by the old project is dead: everyone is
-   signed out, and `VITE_SUPABASE_PUBLISHABLE_KEY` changes.
-6. **PITR is not enabled**, so the recovery point is the last daily physical backup, not the moment
-   before the incident. Any writes since then are lost. Decide whether that is acceptable for a
-   live pilot *before* the go decision (TRAK-46), not during an incident.
-
-## Where the project ref is hard-coded
-
-`git grep -l xbykbqolvqyqmipikuae` finds eight files outside documentation on `main`, 23 Sep.
-Re-grep before executing; the count changes as branches merge. A restored
-project has a different ref. Until these change, the app does not work — and the first one fails in
-a way that looks like a network problem rather than a configuration one.
-
-| Where | What breaks if it is not changed |
+| Configuration | Check for the restored target |
 |---|---|
-| `vercel.json` — CSP `connect-src` **and** `img-src` | **Every request to the new backend is blocked by the browser.** This is the trap: the app loads, and nothing works. |
-| `src/integrations/supabase/client.ts` | Hardcoded fallback URL, used whenever `VITE_SUPABASE_URL` is absent |
-| Vercel env `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | Must be **Config, not Secret**, or the build ships placeholders — this has already bitten us once |
-| GitHub secrets `SUPABASE_PROJECT_ID`, `SUPABASE_DB_URL` | CI's migration push and `functions deploy` still target the old project |
-| `supabase/config.toml` `project_id` | Local CLI only. CI passes `--project-ref "$PROJECT_ID"` explicitly and deliberately does not `supabase link`, so CI is repointed by the two GitHub secrets above, **not** by this file. |
-| `e2e/parent-consent.spec.ts`, `e2e/parent-family.spec.ts`, `e2e/parent-invitation.spec.ts` | Specs abort requests to any other origin, so they fail closed |
-| `seed-admin-data.mjs` | Seeds against whatever it names; check before running it anywhere |
-| `src/lib/__tests__/avatar-url.test.ts` | Fixtures only; harmless |
+| `vercel.json` | CSP `connect-src` and `img-src` permit the intended backend. |
+| Frontend build | `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, plus fallbacks in `src/integrations/supabase/client.ts`, name the intended target. |
+| CI credentials | `SUPABASE_PROJECT_ID`, `SUPABASE_DB_URL` and the deployment token's access scope match the intended target. Never change production CI credentials for a rehearsal. |
+| `supabase/config.toml` | Review project configuration and every function's authentication setting. CI uses explicit target arguments. |
+| Auth and functions | Verify actual site URL, redirect destinations, SMTP, live code templates, function secrets and API keys. |
+| J8, when implemented | Review feed endpoint/credentials, revocations and event switches; separately configure ordinary event mail, reminder jobs, opt-outs and delivery deduplication. |
+| Test/operator tools | Check hardcoded hosts and safety guards before any invocation. |
 
-## Decision point — this costs money
+The canonical workflow in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
+deploys production from main. A throwaway branch does not automatically create a
+usable recovery preview. Review the exact preview deployment method and target
+configuration before starting the rehearsal.
 
-Imad quoted restore-to-new-project on the latest backup at **$10.18/month additional** ($9.68
-compute + $0.50 disk), same organisation, Frankfurt, initial disk 1.5×. He cancelled without
-starting. **Nobody starts a restore without Kostas saying so**, and the restored project is deleted
-at the end of the rehearsal so the charge does not recur.
+## Rehearsal — production remains on its original backend
 
-Always restore into a new project. The old `trak-football-test` project (`vklpncpwenulmjilnxuj`)
-was deleted on 5 Oct 2026 (TRAK-115), so production is the only standing project.
+These steps have not been executed end to end. Use designated synthetic accounts
+and explicitly authorized infrastructure; recording this plan authorizes no live
+restore, email or configuration change.
 
-## Procedure
+1. Record `T0`, the baseline, chosen backup timestamp, new-project cost and the
+   controls preventing outbound side effects. Save the original configuration.
+2. Restore that backup to a new project. Record the new ref, database version and
+   time the database is ready. Keep production secrets, production frontend
+   configuration and main unchanged.
+3. Compare restored schema, data and access controls to the backup's expected
+   state. Explain differences caused by writes after that backup; do not expect
+   a stale backup to equal today's production row counts.
+4. Configure the isolated target's Auth, SMTP, live exported email templates and
+   necessary function secrets. Deploy the reviewed functions with their target
+   set explicitly. Keep pilot-disabled AI disabled.
+5. Build an isolated preview using a throwaway branch and preview-scoped backend
+   values/CSP. Verify its served bundle and network requests point only to the
+   restored target. Verify production still points to the original target.
+6. Complete current admission, consent, activation/recovery and coach-to-family
+   readback using synthetic identities. Include negative access and withdrawal
+   checks. Test username-child creation/reset separately from email recovery.
+   When J8 exists, include its nine acceptance checks and the recovery controls
+   above, with approved synthetic inboxes and isolated feed URLs. Record gaps
+   caused by differences from the production environment.
+7. Record `T_done` only once the synthetic journey succeeds on the isolated
+   preview. Capture failures and missing services explicitly. This is rehearsal
+   duration; it is not a measured production recovery duration.
+8. After preserving evidence and confirming production is unaffected, remove the
+   approved disposable resources and preview configuration. Confirm billing and
+   outbound integrations no longer depend on the rehearsal target. Verify the
+   original production journey again.
 
-There are two procedures, and they must not be mixed up.
+## Real recovery — incident only
 
-- **Rehearsal** proves the restore works and measures how long it takes. It never touches
-  production: not the GitHub secrets main's CI uses, not Vercel's Production environment, not
-  `main`. `trakfootball.com` keeps serving the real project the whole time.
-- **Real recovery** is for an actual incident. It repoints production on purpose.
+Stop the merge queue and follow the [incident/release gate](merge-gate.md). The
+incident owner establishes the affected scope, preserves the original system and
+records the backup choice and known loss window. Recovery steps remain subject to
+that incident's authorization.
 
-Why they are separate: on `main`, CI pushes migrations and functions with the `SUPABASE_PROJECT_ID`
-and `SUPABASE_DB_URL` secrets, and deploys the frontend with `vercel deploy --prebuilt --prod`
-(`.github/workflows/ci.yml`). Changing either during a rehearsal would point `trakfootball.com` at
-a throwaway project that the last step deletes. That is an outage, and anything written in between
-is lost.
+Restore and validate the new backend as above. Before reconnecting real users,
+reconcile security-sensitive changes newer than the backup, especially consent
+withdrawals, account deletions, corrected recipients and staff access. An old
+backup must not silently restore processing permission that was withdrawn.
+For J8, also reconcile later calendar-link revocations/replacements, event-switch
+changes, notification opt-outs and already delivered mail. Record unresolved
+differences and keep affected processing paused.
 
-Record wall-clock at every marker. Estimates are deliberately absent: producing the real numbers is
-the deliverable.
+Prepare a reviewed change for the frontend target/CSP and the exact production
+configuration changes. Repoint CI's database/project credentials and frontend
+build values only as part of that coordinated cutover. A main merge runs migrations,
+functions and frontend deployment: inspect which steps actually completed.
 
-### Rehearsal (production untouched)
+Verify the served build, backend target, Auth/code recovery, permission boundaries
+and synthetic routed journeys on `trakfootball.com`. For an event-enabled release,
+verify calendar links and delivery after cutover too. Record `T_done` after this
+verification, then obtain the incident restart decision. Keep the original project
+and evidence until the founders agree what can be retired. Do not delete the
+restored project: it is now the production target.
 
-| # | Step | Marker |
-|---|---|---|
-| 0 | Re-measure the pre-state above against production, read-only. Save the output. | `T0` |
-| 1 | Dashboard → Database → Backups → restore the latest physical backup **to a new project**. Note the chosen backup's timestamp. | `T_restore_start` |
-| 2 | Wait for the new project to reach `ACTIVE_HEALTHY`. Note its ref and Postgres patch version. | `T_db_ready` |
-| 3 | Run the verification queries below against the restored project. | `T_db_verified` |
-| 4 | Set `LOVABLE_API_KEY` and `SITE_URL` on the restored project; re-create the auth redirect allow-list including `/reset-password` (use the Preview URL from step 6 for the rehearsal, and note the production entries a real recovery would need). Custom SMTP settings too, once TRAK-51 sets them. | |
-| 5 | Deploy the four edge functions **by hand**: `supabase functions deploy <name> --project-ref <restored-ref> --use-api`. **Do not** change the GitHub secrets `SUPABASE_PROJECT_ID` or `SUPABASE_DB_URL`. | `T_functions_ready` |
-| 6 | On a **throwaway branch** that is never merged, change the ref in `vercel.json` (both CSP directives) and `src/integrations/supabase/client.ts`. In Vercel, set the two `VITE_` variables as **Config** scoped to **Preview** only, for that branch. Push the branch and wait for its **Preview** deployment. **Do not** touch Production env and **do not** merge. | `T_frontend_deployed` |
-| 7 | On the **Preview URL**, sign in as a designated synthetic account and complete one real journey: a coach logs an assessment and the player reads it. | **`T_done`** |
-| 8 | Revert everything the rehearsal changed: delete the restored project and confirm the charge does not recur; delete the throwaway branch and its Preview deployment; remove the Preview-scoped `VITE_` variables; remove any redirect or SMTP entries added only for the rehearsal. Confirm `trakfootball.com` still serves the production project (its CSP and bundle still name `xbykbqolvqyqmipikuae`). | |
+A database restore is not a general release rollback. Prefer the compatible
+frontend/forward-repair options in the merge gate when those address the incident
+without losing newer data or security fixes.
 
-The rehearsal's `T0 → T_done` is shorter than a real recovery's, because a real recovery also waits
-for a production CI run. Record both numbers: the rehearsal number, and the duration of the last
-green production run on `main` as the estimate for that extra step.
+## Verification and evidence record
 
-### Real recovery (an incident only)
-
-Same steps 0–4 and 7, except:
-
-| # | Step | Marker |
-|---|---|---|
-| 5 | Point CI at the restored project: change the GitHub secrets `SUPABASE_PROJECT_ID` and `SUPABASE_DB_URL`. Deploy the four edge functions. | `T_functions_ready` |
-| 6 | On `main` through a reviewed PR, change the ref in `vercel.json` (both CSP directives) and `src/integrations/supabase/client.ts`. Set the two `VITE_` variables in Vercel **Production** as **Config**. The merge deploys `trakfootball.com` with `--prod`. | `T_frontend_deployed` |
-| 8 | Do **not** delete the restored project: it is production now. Keep the old project paused, not deleted, until the founders agree nothing more needs recovering from it. | |
-
-### Step 3 verification
-
-Compare against the step-0 snapshot, not against this document.
+Run metadata queries through the authorized operator workflow. Compare with the
+captured baseline and backup age; there are no fixed table/policy counts here:
 
 ```sql
--- migrations: expect the same count and latest version as production
 SELECT count(*), max(version) FROM supabase_migrations.schema_migrations;
-
--- RLS must have survived: expect 24 of 24, and the same policy count
 SELECT count(*) FILTER (WHERE c.relrowsecurity) AS rls_on, count(*) AS tables
 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public' AND c.relkind = 'r';
-SELECT count(*) FROM pg_policies WHERE schemaname = 'public';
-SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-WHERE n.nspname = 'public' AND p.prosecdef;
-
--- row counts, table by table
-SELECT c.relname,
-       (xpath('/row/c/text()',
-              query_to_xml(format('SELECT count(*) AS c FROM public.%I', c.relname),
-                           false, true, '')))[1]::text::bigint AS rows
-FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-WHERE n.nspname = 'public' AND c.relkind = 'r' ORDER BY 2 DESC, 1;
-
--- expected to be EMPTY or absent: the bucket's bytes are not in the backup
-SELECT count(*) FROM storage.objects;
+SELECT schemaname, tablename, policyname, roles, cmd, qual, with_check
+FROM pg_policies WHERE schemaname IN ('public', 'storage', 'trak_private')
+ORDER BY schemaname, tablename, policyname;
 ```
 
-A row-count match is not sufficient on its own. **Run the access tests as authenticated roles**,
-because a restore that loses a policy produces correct counts and wrong permissions, and the
-readiness document is explicit that inspecting SQL text does not prove isolation. At minimum,
-confirm as a signed-in player that `coach_assessment_notes` is unreadable and that another
-academy's `squad_players` are invisible.
+Counts and SQL definitions alone cannot prove isolation. Use authenticated-role
+checks with controls showing the protected rows exist: another family's data and
+another academy's data remain unreadable; private notes remain inaccessible to
+children and parents; withdrawn consent blocks development writes/readback. Prove
+the applicable G1–G7 guarantees and record every failure.
 
-## Evidence record — fill in on execution
-
-Per `docs/pilot-readiness-2026-09-25.md`: name commit/workflow, deployment, role/test identity,
-device, expected/observed outcome, and limitations.
-
+```text
+Run type: rehearsal / incident recovery
+Owner and independent reviewer:
+Source commit, workflow and served build:
+Start/end timestamps (UTC):
+Source and restored project refs:
+Backup timestamp and completion state:
+Baseline captured at; expected differences since backup:
+Database-ready time; complete-journey time:
+Data loss interval and affected records/categories:
+Schema/data/grants/policies comparison:
+Auth, code emails, functions and session checks:
+Authenticated-role controls and negative checks:
+Consent/deletion/recipient corrections reconciled:
+Storage metadata versus actual files:
+J8 nine checks, or not yet implemented:
+J8 feed revocations, switches, mail jobs/opt-outs/deduplication reconciled:
+Device, synthetic identities, expected/observed outcomes:
+Production target verified before/after:
+Missing services, failures and limitations:
+Cost; cleanup/cutover authorization and verification:
+Academy disclosure and incident communications record:
 ```
-Executed by:            (must not be the only reviewer — S5 needs a non-author verdict)
-Date/time (UTC):
-Backup restored:        timestamp ............  chosen because ............
-Source project:         xbykbqolvqyqmipikuae
-Restored project ref:                          Postgres patch:
-T0 → T_db_ready:                               (restore alone)
-T0 → T_done:                                   (ACTUAL RECOVERY TIME — this is the S5 number)
-Data loss window:       last backup → incident = ............
-Verification:           migrations ___/83 · RLS ___/24 · policies ___/97 · definer fns ___/48
-                        row counts match: yes / no — differences:
-                        authenticated access tests: ............
-Storage objects:        expected 0 recovered — observed:
-Not recovered:          avatars bucket · auth config · function secrets · sessions
-Cost incurred:                                 Project deleted at:
-Limitations:
-```
 
-## What would make this unnecessary to rehearse twice
-
-Nothing here removes the need to execute it once. But two of the six gaps above are fixable rather
-than merely documented, and both are cheaper than a restore: an export of the `avatars` bucket
-(item 1), and enabling PITR (item 6) so the recovery point is not up to 24 hours old. Both are
-decisions for Kostas with a cost attached, and neither is in this release's scope.
+This file stays marked unrehearsed until an executed evidence record supports a
+new status. Enabling PITR or establishing staging would be a new decision; neither
+is assumed by this procedure.

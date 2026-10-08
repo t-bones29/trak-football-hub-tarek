@@ -1,280 +1,345 @@
 # Trak — MVP Requirements (first pilot)
 
-Scope decisions recorded by the founders on 23 September 2026. Formal scope
-acceptance is tracked in [TRAK-21](https://linear.app/trak-football/issue/TRAK-21);
-the independent correctness review of this document is tracked separately in
-[TRAK-39](https://linear.app/trak-football/issue/TRAK-39). Follow the release gate
-in docs/release/merge-gate.md for changes.
-Replaces the April 2026 "pilot wedge" requirements (REQ-001 to REQ-005 and
-the 60% player-logging hypothesis). Those, and the April PRD, architecture,
-roadmap and milestone plans, are in git history at commit 9114f4c.
+Scope for the first real-child pilot, incorporating the 23 September decisions
+and the 7–8 October 2026 events decision. This file defines the required
+behavior; it does not certify that every requirement has shipped or passed.
+Deployed evidence belongs in [PILOT-INDEX](docs/use-cases/PILOT-INDEX.md).
+Assignments and acceptance evidence belong on the corresponding Linear issue.
+Changes follow [the release gate](docs/release/merge-gate.md).
 
-Progress against this scope is tracked in docs/use-cases/PILOT-INDEX.md.
+The April pilot wedge and REQ-001–005 are historical. Their replacement is the
+J1–J8 contract below. Formal original scope acceptance is tracked in
+[TRAK-21](https://linear.app/trak-football/issue/TRAK-21); the events addition is
+[TRAK-25](https://linear.app/trak-football/issue/TRAK-25).
+The independent scope review remains tracked in
+[TRAK-39](https://linear.app/trak-football/issue/TRAK-39).
 
+## Pilot boundary
 
-## The idea
+One whole squad at one UAE academy, for eight weeks. The academy chooses the
+squad. The agreed start date, cohort count and contacts must be recorded before
+admission; a provisional configured date is not permission to start. Rehearse
+with at least the required 25-player synthetic squad. Do not publish the
+academy's identity or private meeting links in this repository.
 
-Build a few essential journeys to a high standard and ship them sooner. Every
-other feature shows "coming soon". A feature PR that serves none of the journeys or
-guarantees below waits until the pilot has started. Scope clarification and
-launch-gate work must name their assigned Linear issue.
+The loop is academy admission → guardian consent → child activation → coach
+schedules and runs a session → coach records attendance, assesses and writes a
+message → player sees the message and bands; linked parents see bands and
+history. Events are part of the first pilot, not a feature to add after launch.
 
-The loop:
+## Required journeys
 
-  Academy registers the child -> parent consents -> child activates their
-  account -> coach logs the match or training -> coach assesses and writes a
-  message -> the player sees the message; the parent sees the bands.
+### J1 — Academy admission
 
-Cohort: one whole squad at one UAE academy, chosen by the academy, for eight
-weeks. The academy and the player count are not agreed yet. Rehearse for 25.
+The academy supplies child name, date of birth, age group, assigned coach and
+every guardian email. A child's own email is optional. Trak loads the verified
+roster through the concierge workflow; the academy console remains coming soon.
 
+Only rostered children and academy-supplied guardians are admitted. The backend
+refuses uninvited player and parent profiles. Children do not join by entering a
+name or coach code, and coaches do not add children. A player cannot change
+their own date of birth; missing date of birth counts as under 18.
 
-## P0 journeys (the non-negotiables)
+The roster is the source of the child's name throughout setup and the app.
+Trak corrects roster identity/contact errors through the audited operator
+procedure, not by asking the child to overwrite them.
 
-J1. Academy admission (concierge)
-  - The academy gives Trak its roster: child name, date of birth, age group,
-    assigned coach, child email and every guardian email. Trak loads it by
-    hand. The academy console shows "coming soon".
-  - Only rostered children get in. The backend refuses player and parent
-    profiles that have no valid invitation. Hiding the signup screen is not
-    enough.
-  - Children do not join by typing a name or a coach code, and coaches do not
-    add players.
-  - A player cannot change their own date of birth. A missing date of birth
-    counts as a minor.
+### J2 — Parent consent
 
-J2. Parent consent
-  - The invitation goes to the guardian emails the academy supplied, is sent
-    when the child is admitted, and arrives in under 60 seconds at Gmail and
-    Outlook, not in spam. It names the child, the academy and the purpose, and
-    carries Trak branding and a safe-sender line.
-  - One required consent covers coach records, assessments, the published
-    message, and viewing by the child and their linked parents. It is stored
-    with the guardian's name, relationship and the notice version. The screen
-    promises nothing the system does not enforce.
-  - Each guardian has their own sign-in, linked to the child. One guardian
-    can consent for siblings without a second account.
-  - Withdrawal is one tap from the parent profile while signed in. It takes
-    effect immediately, including for sessions that are already open.
+Guardian invitations are sent when the child is admitted. They must arrive at
+Gmail and Outlook in under 60 seconds, in the inbox rather than spam, and name
+the child, academy and purpose with Trak branding and a safe-sender line. An
+existing guardian's email for another child must name that child too.
 
-J3. Child activation
-  - Only after consent, the child gets a one-use invitation at the email the
-    academy supplied. First send, resend, expiry, wrong account and existing
-    account all behave safely.
-  - A forgotten password uses the standard reset to the child's email. If an
-    address is wrong, Trak corrects it by hand and records who changed it and
-    when.
+The required consent covers coaching records, assessments, the published
+message and viewing by the child and linked parents. Record the guardian's
+name, relationship and notice version. Parents see bands and history, not the
+coach's message. The screen must promise only choices the system enforces.
 
-J4. Coach logs
-  - Match: date, opponent, result, and each child's position, minutes, goals
-    and assists, with no invented defaults. This uses the existing `matches`
-    table and `log_match_for_player`, which still needs a consent check.
-  - Training: date, type and session notes, using the existing
-    `coach_sessions` table.
-  - Every write checks consent and the coach's academy assignment. A retry
-    never creates a duplicate and never silently loses data.
+Each guardian has their own sign-in. One guardian can approve siblings without
+a second account. Withdrawal is one tap from the signed-in parent profile and
+blocks processing and family access, including sessions already open.
 
-J5. Coach assessment and message
-  - The coach's squad marks each player "Ready to assess" or "Waiting for
-    parent". A waiting player cannot be opened, and the reason is shown in
-    plain words. If consent is withdrawn while the form is open, the save
-    fails with a plain message and the values the coach entered are kept.
-  - Everything is on one screen: six sliders produce the band, then two boxes.
-    "Message to [first name]: only [first name] sees this." and an
-    optional "Private note: only you can see this."
-  - Parents never see the coach's message; they see the bands. Decided by
-    Imad on 25 September 2026 after the second use-case test: a message
-    parents also read doubles the coach's workload and invites parent-coach
-    friction. Revisit with pilot feedback (TRAK-63).
-  - One Save button: saving sends the message to the player; nothing reaches
-    them before the coach saves (Imad, 25 September 2026, TRAK-64). If only
-    part of a save works, the screen says what was saved and what was not.
-  - An assessment belongs to a session that already happened: the session is
-    required and there is one assessment per player per session (Imad, 25
-    September 2026, TRAK-68).
-  - Quick Assess is hidden for the pilot. /coach/assess is the only
-    assessment screen (see "Coming soon" below).
+**Open implementation/notice discrepancy:** at the audited main `d0ed55f`, the
+consent screen also records optional parent-visibility and recognition choices.
+Family read access does not depend on the parent-visibility choice, and
+recognition authoring is parked. This must be reconciled with the required
+consent wording and counsel-approved notice; existing J2 rehearsal results do
+not establish that those optional choices control access.
 
-J6. Player and parent see it
-  - Player home shows the latest band, the six bars and the coach's message,
-    marked "new" until opened. Before the first assessment it says the player
-    is waiting for their coach, not "Your card is ready".
-  - Player and parent see the match and training history the coach logged.
-  - A parent sees the same bands and history for the selected child, but
-    not the coach's message (J5). With siblings, it shows the right child
-    every time.
-  - A failed load shows a clear error and a retry button. It never shows an
-    empty state that looks like "no data" (UC-X02).
+### J3 — Child activation and recovery
 
-J7. Measure
-  - On any pilot day, answer in under a minute: assessments per coach this
-    week, and player and parent opens this week. Count real UI events only,
-    not seeded or synthetic accounts.
-  - Opening a published message is recorded as a UI event.
+Consent is required before either activation path:
 
+- With a child email, send a one-use invitation to the rostered address. First
+  send, resend, expiry, wrong account and existing account must behave safely.
+  Only the newest code works after a resend. Recovery uses that email.
+- Without a child email, the approved guardian creates the child's username
+  and password, then resets the password through their own account if needed.
+  A guardian reset invalidates existing child sessions; an open child device
+  must sign out within the accepted 30-second limit.
+
+Invite, sign-in and reset emails display a code entered at `/auth/code`. No
+button or fallback in those emails may consume the credential before the person
+enters it. Signup confirmation is a separate `/auth/confirm` flow; it deliberately
+signs out after confirmation and is not the pilot family's invitation path.
+See TRAK-84, TRAK-103, TRAK-104, TRAK-107 and TRAK-117.
+
+### J4 — Coach records a completed session
+
+- Match: date, opponent, result, and each child's position, minutes, goals and
+  assists, without invented defaults.
+- Training: date, type, attendance and session notes.
+- Every write checks active consent and the coach's academy assignment.
+- Retries must not duplicate records or silently lose entered data.
+
+The existing match/session paths remain in scope. J8's conversion of a past
+event into a completed session must feed the same attendance and assessment
+workflow rather than create an incompatible second record.
+
+### J5 — Coach assessment and message
+
+The squad marks each child ready to assess or waiting for a parent. A coach may
+open the academy-supplied profile before consent, but cannot assess the player
+until consent is active. Show the waiting reason plainly. This distinction was
+confirmed on 8 October and replaces the older blanket restriction on opening
+the profile. Assessment and development writes remain consent-gated. If consent is
+withdrawn while a form is open, saving is refused and the entered values remain.
+
+The assessment screen has six sliders, the resulting band, a message visible
+only to the child, and an optional private note visible only to its coach. One
+Save publishes the message; nothing reaches the player before saving. A partial
+failure states what saved and what did not.
+
+Assessments require a completed session attended by the player, with one
+assessment per player per session. `/coach/assess` is the pilot assessment
+screen; Quick Assess remains hidden. Parents never see the coach's message.
+These decisions are recorded in TRAK-63, TRAK-64, TRAK-68 and TRAK-100.
+
+### J6 — Player and parent see the records
+
+Player home shows the latest band, six bars and coach message, marked new until
+opened. Before the first
+assessment it says the player is waiting for their coach. The player and linked
+parent see coach-recorded match and training history. Parents see bands and
+history for the selected child, never the coach's message or private notes.
+Sibling switching must show only the selected child's data.
+
+A failed load shows a clear error and retry control. It must not look like an
+empty history. Shared-device, wrong-account and withdrawal cases remain part of
+the deployed rehearsal.
+
+### J7 — Measure actual use
+
+An authorized operator must answer within one minute: assessments per coach
+this week, and player and parent assessment opens this week. Count real UI
+events for the configured pilot cohort; exclude synthetic accounts in pilot
+reporting.
+
+**Known measurement limit:** `feedback_opened` means player home displayed the
+published message, not that the child deliberately opened or read it. Count
+distinct player/assessment pairs per week. Parent `assessment_viewed` means
+parent home displayed the latest bands and counts distinct parent/assessment
+pairs. General app-opening retention is a separate metric. Do not describe
+these as proof of reading. A better measure and numeric value targets remain
+open. See TRAK-10 and TRAK-71.
+
+### J8 — Events and family calendars
+
+The coach schedules training, matches and other events with weekly repeat.
+Players and parents see relevant events in the app and their phone calendar.
+Changes and cancellations reach affected families. A past event becomes a
+completed session with attendance. A per-academy off switch must require no
+deployment. The latest 8 October TRAK-25 decision splits this into 18
+implementation issues, TRAK-124–TRAK-141, all Todo when reviewed. The academy
+console and AI schedule import remain out of scope.
+
+The updated scope includes:
+
+- Match kit as an event field. Lineups and yes/no/maybe matchday planning remain
+  parked separately. For J8 attendance, everyone is expected unless a guardian
+  reports “Can't make it”; the coach records actual absence after the event.
+  The guardian can give an optional short reason and undo the response until
+  the start. These responses are not a published family absence list.
+- League fixtures imported from CSV or PDF. CSV is the first path; the PDF
+  method remains open. AI extraction is outside the pilot (TRAK-129).
+- A private calendar link per person, with replacement revoking the previous
+  link, and one-tap subscription during signup or later from Settings. A feed
+  fetch is not proof a phone has displayed its update (TRAK-132/133).
+- Changes in the app and parent bell. Today/tomorrow changes use guardian
+  email; player email remains open. Two-day reminders are grouped per guardian
+  and day, with opt-out in Settings. Emails contain no unsubscribe link or
+  one-click action that changes state when a scanner opens it (TRAK-134–136).
+- A manual WhatsApp share action with event details and no child names or
+  absence list. The coach chooses the destination and sends; automatic posting
+  is out (TRAK-139).
+- Separately revocable, named extra calendar links a guardian can give to a
+  relative or driver, scoped to selected children's matches or all events.
+  The recipient needs no Trak account. This planned sharing adds privacy and
+  revocation requirements for counsel review (TRAK-140).
+
+TRAK-25 defines nine acceptance checks; check 9 was added on 8 October:
+
+1. Create eight weeks of weekly training in under two minutes.
+2. Every affected player and parent sees changes/cancellations on next app
+   load; the parent's bell includes them. Same-day changes/cancellations also
+   reach guardians by email within 60 seconds.
+3. Apple, Google and Outlook subscriptions show new, changed and cancelled
+   events after refresh without duplicates, tested on real phones.
+4. Withdrawal removes the child's events from the app and calendar link on
+   the next request.
+5. Real-role SQL tests prove there is no cross-academy event visibility.
+6. No calendar entry contains a child's name.
+7. A past event becomes a completed session with attendance in one step, and
+   existing J4/J5 tests stay green.
+8. A two-phone production rehearsal with synthetic families and all three
+   calendar apps passes before real families receive events.
+9. A parent or player subscribes from signup in one tap on iPhone, Android
+   with Google Calendar, and Outlook.
+
+Implementation, provider choices and executable operating procedures are not
+yet complete. These are required outcomes, not claims that the feature is
+available. Follow the open decisions in the 18 issues; do not invent controls,
+import parsing or provider behavior. Direct Google/Microsoft calendar account
+connections, the academy view, lineups and automatic WhatsApp posting remain out.
 
 ## Guarantees
 
-The database enforces these, not the UI. Each is proven by a negative test
-run under a real authenticated role.
+The backend must enforce these. Each requires negative tests under actual
+authenticated roles, with controls proving the protected data exists.
 
-G1. No development record exists about an under-18 without active consent, on
-    every write path: assessments, awards, `log_match_for_player`, shared
-    feedback.
-G2. A child cannot approve themselves, change their age or choose their
-    guardian's email.
-G3. No child sees another child's data, and no academy sees another
-    academy's data.
-G4. Nothing reaches a child that a coach did not write and publish. Private
-    notes stay private.
-G5. No message about a child goes to the wrong adult.
-G6. Withdrawal stops processing and hides published content immediately.
-G7. No AI processing, player passport/export/sharing, or child photos, in
-    either the UI or the backend. Account data export and account deletion
-    are separate rights and stay in scope: deletion is in Settings, and export
-    is the `export_my_account()` function, which no screen offers yet.
+- **G1:** no development-record write for an under-18 without active consent,
+  across assessments, awards, matches, training and shared feedback. Parked
+  features' writes remain closed regardless of consent.
+- **G2:** children cannot approve themselves, alter their age or choose their
+  guardian's address.
+- **G3:** no cross-child or cross-academy access, including the new event paths.
+- **G4:** children receive only coach-authored, published content; private notes
+  remain private.
+- **G5:** no message about a child reaches the wrong adult.
+- **G6:** withdrawal stops processing and family access; event/calendar access
+  must also satisfy J8's next-request check.
+- **G7:** AI processing, player passport/export/sharing, child photos and avatars
+  remain disabled in both UI and backend. Account deletion and access to account
+  data are separate rights. `export_my_account()` exists; a self-service export
+  screen is not established by this audit (TRAK-81).
 
-Bypass attempts that must fail against the API: self-signup without an
-invitation, changing a date of birth, linking by name or code, a coach
-writing for a waiting player, reading private notes, and reading another
-child's records.
+Tests must include uninvited signup, age changes, name/code linking, writes for
+waiting children, private-note reads, wrong-adult delivery and cross-child reads.
 
+## Outside the pilot
 
-## Success
+Parked screens may retain their design with a Coming soon label, but their
+actions send nothing and backend writes stay closed (TRAK-85). The route map
+lives in `src/App.tsx`; a rendered screen is not proof its feature is admitted.
 
-Quality bar: no P0 journey fails during the eight weeks. A manual workaround
-keeps other work moving, but it does not count as a pass. The journey must be
-repaired and retested.
+The TRAK-43 route decisions remain part of the contract:
 
-Value (proposed; founders set the targets before launch):
-  - Share of published coach messages that the player opens
-    within 7 days.
-  - Share of players who receive at least one published message every 14
-    days.
+- Required paths include admission/authentication, parent consent/profile and
+  selected-child history, coach squad/player/assessment/session/profile/manual,
+  player home/feedback/history/profile, shared profile/settings and dashboard.
+  The new `/auth/code` flow supplements the separate signup confirmation path.
+- `/coach/sessions/quick` remains the J4 Match entry and opens the same
+  `CoachAddSession` screen as `/coach/sessions/add` in match mode.
+- `/player/passport`, `/player/evolution`, `/coach/feedback/:assessmentId`
+  (AI draft review), `/coach/assistant`, `/coach/recognition`, `/coach/award`,
+  `/parent/alerts` and the `/club/*` console remain Coming soon.
+  `/club/home` must render without errors when the academy director signs in.
+- `/coach/schedule` remains parked at the audited baseline. TRAK-127 requires
+  reusing `CoachSchedule` and enabling that route behind TRAK-124's academy
+  switch; this is planned work, not a current deployment claim.
+- `/coach/squad/add` and avatar upload stay removed. `/coach/quick-assess`
+  stays hidden; its former home/post-match entry points use `/coach/assess`.
 
+AI feedback/assistant/schedule parsing, player passport and sharing, child
+photos, recognition/awards, parent goals, player-entered match logging, guardian
+invitation of other adults, a household entity, per-child training notes and
+academy transfers remain outside the pilot. The academy supplies every guardian;
+founders handle exceptional academy changes. Manual retry is sufficient when
+the failure is clearly shown.
 
-## Coming soon (by route, from src/App.tsx)
+TRAK-81 records a self-service account-data download as the first feature after
+the pilot starts. It remains Backlog; its delivery must also follow the pilot
+change policy once agreed. Until it ships, account-data requests use the
+authorized support/operator procedure, with scope confirmed by counsel.
 
-"Coming soon" means the screen shows as designed with a "Coming soon" pill;
-its actions show "Coming soon" and send nothing; its backend writes stay
-closed. Hiding a button is not enough: the closed backend is the protection
-(founders' call, 26 September 2026; TRAK-85).
+Other agreed later scope, without a committed release date or ordering:
 
-P0, must work:
-  /, /auth/confirm, /reset-password, /onboarding/:role (invitation only),
-  /parent-invite, /parent-info, /parent/home, /parent/matches,
-  /parent/consent, /parent/profile, /coach/home, /coach/squad,
-  /coach/player/:id, /coach/assess, /coach/sessions, /coach/sessions/add,
-  /coach/sessions/quick, /coach/sessions/list, /coach/profile,
-  /coach/manual, /player/home, /player/feedback/:assessmentId,
-  /player/matches, /player/match/:id, /player/profile, /profile,
-  /settings, /dashboard
+- **Matchday (TRAK-123, parked):** yes/no/maybe availability and a lineup from
+  available players which players can see. Response-age rules, parent lineup
+  visibility and reply deadlines remain open. Kit moved into J8; matchday
+  reuses it. Automated WhatsApp reminders are only a later possibility;
+  manual event sharing is already planned in J8.
+- A coach-only reminder on a player's birthday, using the roster date of birth.
+- Preferred foot and player stats entered by the coach; UAE FA syncing is a
+  possible later source. No height or weight.
 
-  /coach/sessions/quick stays: it is the "Match" entry from
-  /coach/sessions and opens the same screen as /coach/sessions/add in
-  match mode. It is J4's match-logging path.
+## Success and launch gate
 
-Coming soon:
-  /player/passport, /player/evolution, /coach/feedback/:assessmentId (AI
-  draft review), /coach/assistant, /coach/schedule, /coach/recognition,
-  /coach/award, /parent/alerts, /club/home, /club/squads, /club/coaches,
-  /club/profile, /club/radar
+The quality bar is that no required journey fails during the eight weeks. A
+workaround may keep support moving but is not a pass; repair and retest the
+journey. Value measures and numeric targets are still to be agreed, using the
+J7 measurement limitation honestly.
 
-  The academy console is coming soon because the concierge roster (J1)
-  replaces it. /club/home is also where an academy director lands after
-  sign-in, so the screen must render there without errors.
+The existing proposed value measures are the share of published messages shown
+to players within seven days, and the share of players receiving a published
+message every 14 days. Neither has an agreed numeric target; being shown a
+message does not establish that it was read.
 
-Remove for the pilot:
-  /coach/squad/add (the academy registers players). Remove avatar upload
-  from every profile page.
-  /coach/quick-assess: hidden. It saves sliders and a private note but has
-  no message to the player and no publish step, so it cannot meet J5. A
-  second assessment screen would also need its own proof for G1 and G4.
-  Its two entry points (the Coach Home button and the post-match prompt)
-  go to /coach/assess instead.
+Real children join only when every gate passes and a founder majority says go:
 
-Route calls decided by Kostas on 23 September 2026 (TRAK-43).
+1. J1–J8 pass on the deployed build on two real phones with synthetic families
+   and approved inboxes. Include siblings, withheld consent and withdrawal.
+2. G1–G7 and event-isolation/withdrawal checks pass against the deployed backend.
+3. The synthetic 25-player rehearsal passes without unexplained errors.
+4. The academy pilot agreement is signed and terms are accepted.
+5. Counsel approves data roles, notice, withdrawal/deletion and retention,
+   including planned event/calendar processing. Pilot plus 90 days remains a
+   proposed retention period, not approved policy.
+6. Backup and written recovery procedures exist. The recorded 2 October
+   decision accepts daily backups retained for seven days, no PITR and an
+   unrehearsed restore. The go decision records that limitation and potential
+   loss of writes since the latest backup. Recovery duration is unmeasured.
+7. The agreed support path is ready: academy staff and founders in a WhatsApp
+   group, without parents or children. The first of Tarek, Imad or Kostas to
+   read owns the response and fix. The internal aim is two hours; no response time is promised.
+   Share only the child's first name and the problem there. Contact details,
+   date of birth and child-data screenshots stay out; use a direct call or
+   `support@trakfootball.com` for sensitive details.
+8. An operator verifies the actual cohort and agreed dates in `pilot_config`,
+   with synthetic counting off. Record the check; do not copy a past configuration
+   snapshot as current evidence.
+9. J8's nine checks, including one-tap setup, three calendar apps and two-phone rehearsal,
+   pass before events reach real families. Adding J8 does not inherit earlier
+   J1–J7 rehearsal passes.
 
+The service has no separate staging environment. Synthetic rehearsal and pilot
+organizations share the system. The pilot disclosure must explain this and the
+recovery limitations. As confirmed on 8 October, the academy has not yet been
+briefed; a meeting is planned in the coming weeks. Disclosure is pending and
+must be recorded when it happens.
 
-## Cut from the pilot
+For a wrong recipient, consent bypass, cross-child read, safeguarding concern
+or stop/delete request, pause the affected scope and new admissions immediately.
+A founder majority decides restart, subject to legal duties.
 
-  - AI feedback, the assistant and schedule parsing. Child data would go to a
-    third party without processor paperwork.
-  - Player passport, its export and sharing. Account data export and account
-    deletion remain in scope.
-  - Child photos and avatars, until storage access and backup are fixed.
-  - Recognition and awards.
-  - Parent goals.
-  - Player-entered match logging (UC-A02/A03 are parked).
-  - Lead guardian inviting another adult. The academy supplies every guardian.
-  - A separate "household" entity. Guardians who each link to the child
-    already get the same result.
-  - Per-child training notes. The published message is the child-specific
-    text.
-  - Transfers between academies. One academy, one squad: founders handle any
-    change by hand.
-  - Automatic retry. A clear error with a retry button is enough.
+## Decisions still open
 
+- Final start date, cohort count, squad and named operational contacts.
+- Numeric value targets and a better measure of whether a player reads feedback.
+- Counsel-approved notice, data roles, retention, transfers and rights handling;
+  reconciliation of optional consent wording with actual enforcement.
+- J8's remaining choices and verified procedures: email sender/provider/region,
+  PDF import method, calendar-feed endpoint, player change emails and reliable
+  subscription behavior on the supported phones. Decided link revocation and
+  off-switch outcomes still need implementation and rehearsal.
+- Changes during the pilot: permitted features/fixes, notice, deploy window,
+  emergency review rule and duty rota. The 8 October discussion is a proposal;
+  existing review/merge requirements continue until a new rule is agreed and
+  implemented.
 
-## First after the pilot starts
+## Historical requirement mapping
 
-Events: the coach schedules training and matches, the family sees a calendar
-with Google and Apple sync, and the coach marks attendance. RSVP is not
-agreed. Then the home screen for each role (design work in the pilot-demo
-channels). Other coming-soon items have no agreed order.
-
-
-## Launch gate for real children
-
-Real children join only when all of these pass and a majority of founders
-says go. A date on its own never admits anyone.
-
-  1. Every P0 journey passes on the deployed build, on two real phones,
-     with synthetic identities and approved inboxes. Use three children: two
-     siblings, and one whose guardian withholds consent. Then withdraw
-     consent for one child.
-  2. Every guarantee's negative test passes against the deployed backend.
-  3. A synthetic 25-player squad runs with no errors.
-  4. A signed academy pilot agreement, and terms accepted.
-  5. Counsel signs off on data roles, the notice, withdrawal and deletion,
-     and retention. The proposed retention is the pilot plus 90 days.
-  6. A backup and a written recovery runbook exist. The restore has not been
-     rehearsed, and the go decision records that risk.
-  7. A named support path: a WhatsApp group with the academy (Kostas,
-     27 September). The first of Tarek, Imad or Kostas to read a message
-     replies and owns the fix. No response time is promised to the
-     academy; we aim to reply within 2 hours (Kostas, 28 September). The
-     group is the academy's staff and the founders; parents and children
-     aren't in it. In the group a child is named by first name, with the
-     problem only: no dates of birth, contact details or screenshots of a
-     child's data. Anything more goes by a direct call or to
-     support@trakfootball.com. The founders jointly own support and
-     escalation.
-  8. `pilot_config` points at the real academy. Today it points at
-     "Rehearsal FC", starting Monday 12 October (provisional, moved from
-     5 October; Kostas, 3 October; the founders fix the date at their
-     meeting the week of 5 October), so pilot weeks run Monday to Sunday.
-
-Friday 25 September is a synthetic demo, not admission.
-
-Incidents: for a wrong recipient, a consent bypass or a cross-child read,
-pause the affected scope and new admissions at once. A founder majority
-decides the restart, subject to legal duties.
-
-
-## Open
-
-  1. The academy, the squad, the player count and named contacts.
-  2. The targets for the value measures.
-  3. The counsel items in gate 5.
-  4. Use-case registry entries that contradict J1
-     (docs/use-cases/OPEN-QUESTIONS.md, Q-2026-09-23-01).
-
-
-## Where the April requirement IDs went
-
-REQ-001 (player match log): retired. The coach logs matches (J4).
-REQ-002 (coach assessment): J5.
-REQ-003 (invite codes): replaced by academy admission (J1 to J3).
-REQ-004 (parent view and consent): J2 and J6.
-REQ-005 (telemetry): J7.
+REQ-001 player logging is retired; J4 is coach logging. REQ-002 maps to J5.
+REQ-003 codes were replaced by J1–J3. REQ-004 maps to J2/J6, and REQ-005 to J7.
+The resolved Q-2026-09-23-01 is a historical registry decision, not an open gate.

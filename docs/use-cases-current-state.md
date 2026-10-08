@@ -1,212 +1,73 @@
-# Use Cases and state of the App — current build
+# Pilot use cases: source map
 
-Verified against the current source: `App.tsx` route table, `NavBar` navigation, 37 migration
-files, and the existence or absence of every file cited. Items marked *verified live* were
-additionally exercised in a running app against the database, signed in as that role.
+Reviewed 8 October 2026 against repository source at
+[`d0ed55f`](https://github.com/kostasanastasioubusiness-lang/trak-football-hub/tree/d0ed55ff618ee0a0b943399236527f9e3f7ebbb5)
+and the dated decisions and rehearsal records linked below. This is a map for
+finding the relevant contract, code and evidence. It does not certify current
+production behavior, the absence of defects or readiness to admit real children.
 
-**Status key** ✅ works · ⚠️ present, not behaviourally verified · 🔴 broken · ❌ not built ·
-⬜ removed by design
+## Read the right source
 
----
-
-## Persona: Coach
-
-*(primary user)*
-
-| | Use case | Status | Evidence |
-|---|---|---|---|
-| C1 | Sign up, onboard, pick club/team/role | ⬜ | Removed for the pilot (TRAK-12, 26 Sep): Trak creates coaches with `admit_staff_member`, which also generates their `invite_code`. See `docs/pilot-runbook.md` |
-| C2 | Add a player to my squad manually | ✅ | `CoachAddPlayer` inserts `squad_players`; RLS correct |
-| C3 | View my squad | ✅ | `CoachSquadPage` |
-| C4 | Assess a player on 6 sliders → band | ✅ | `CoachAssess`; `coach_rating` is a generated column; RLS correct. **Quick Assess** walks the whole squad and, since `a282d34`, starts each slider at that player's previous assessment rather than the midpoint — the coach moves only what changed instead of ~108 drags per squad |
-| C5 | View a player's assessment history | ✅ | `CoachPlayerProfilePage` |
-| C6 | Log a training/match session | ✅ | `coach_sessions`; RLS correct |
-| C7 | Log a match on behalf of a player | ✅ | `log_match_for_player` SECURITY DEFINER RPC, used by `CoachQuickMatchLog` and `CoachAddSession`. **This is now the only path a match enters the system** |
-| C8 | Share my TRK-XXXX code to connect a player | ⬜ | **Removed by design** (TRAK-72, 26–28 Sep): players join through the academy roster (J1). Coach Home and Profile show no code, and `invite-codes.ts` and `InviteCodeDisplay` are deleted. The `invite_code` columns remain but aren't used for joining |
-| C9 | Recognise / award a player | ✅ | Verified live: renders the real squad with band pills and week/month/season tabs. Awards flow through to the player's passport |
-| C10 | Schedule | ✅ | Verified live: calendar renders, today highlighted, event-type legend, clear empty state, plus an AI "import from text or club website" entry point |
-| C11 | AI assistant | ✅ | Verified live and **context-aware**: knew the coach's team (U15s, City FC Academy), named real squad players in its answer, and rendered a `PitchDiagram` with movement arrows |
-| C12 | Coach progress dashboard | ⬜ | `components/coach/CoachProgress.tsx` exists but is referenced nowhere — dead tree |
-| C13 | See a player's character progress | ❌ | Planned. No code exists |
-
-> **Coach reality:** the coach product is complete and coherent. A coach can onboard, build a squad,
-> assess on six dimensions, log sessions, log matches for their players, share a working invite code
-> that genuinely links an athlete, and recognise behaviour. Everything the product asks of the coach,
-> the coach can do today.
-
----
-
-## Persona: Athlete
-
-*(kids)*
-
-| | Use case | Status | Evidence |
-|---|---|---|---|
-| A1 | Sign up and onboard as a player | ✅ | **Verified live on a fresh account**: 3-step form wrote `profiles` + `player_details` (DOB, position, club, age group, shirt) atomically |
-| A2 | Connect to my coach via TRK code | ✅ | **Verified live** against the database. `link_player_to_coach` strips the `TRK-` prefix case-insensitively and trims, so `TRK-ALEX`, `ALEX`, `trk-alex` and `  TRK-ALEX  ` all resolve to the same squad row; `TRK-NOPE` is rejected with *Invalid coach code*. Idempotent — re-linking returns the existing row rather than duplicating |
-| A3 | Browse my match history + detail | ✅ | `PlayerMatches`, `PlayerMatchDetail` — populated by the coach (C7) |
-| A4 | See my band result | ✅ | Rating engine, well covered by tests |
-| A5 | See my coach's assessment + private note | ✅ | `PlayerFeedback.tsx` (664 lines) reads `coach_assessments` + `coach_assessment_notes` at `/player/feedback/:assessmentId`; RLS policy `Players read own assessments` |
-| A6 | Evolution Card | ✅ | `PlayerEvolutionCard.tsx` (960 lines) aggregating `matches`, `coach_assessments`, `recognition_awards`, `player_details`. A primary nav tab ("Card") — **this is the athlete's progression surface** |
-| A7 | Passport | ✅ | Verified live — career totals, season history and recognition all render. The card is a fixed 390px so the exported PNG is identical on every device, which overflowed a 375px viewport; **fixed** (`866949a`) by scaling the card visually while `captureCard()` drops the transform for the html2canvas call, so exports keep full geometry. No overflow at 375px or 320px |
-| A8 | Invite my parent | ✅ | **Built and verified live** (`5c91efe`). The invite and `invite_token` were always created correctly, but nothing delivered them. A "Parent access" card on the player profile now lists pending and accepted invites and shares a `/parent-invite?token=…` link via the native share sheet, clipboard, or revealed text if both fail. New `create_parent_invite` RPC allows adding a parent after signup; idempotent and case-insensitive. The link pre-fills the parent's email read-only, guaranteeing the match that links them to the child |
-| A9 | Profile | ✅ | `PlayerProfilePage` |
-| A10 | Self-log a match | ⬜ | **Removed by design.** `PlayerLogForm.tsx` no longer exists; no "Log" tab in the player nav. Matches come from the coach |
-| A11 | Create / track goals | ⬜ | **Removed by design.** No goals files, routes, or nav entry. The Evolution Card serves this purpose |
-| A12 | Earn / see medals | ⬜ | Removed. `MedalType` remains in `types.ts`; recognition is now the coach-driven path |
-| A13 | Character: per-session moment (learn → apply → act) | ❌ | Planned. No code exists |
-| A14 | Character: my growth, streaks, values | ❌ | Planned. Separate axis on the card — never merged into the performance band |
-
-> **Athlete reality:** the athlete's experience is now coherent as a *receiving* one — matches, band,
-> coach feedback, and an Evolution Card that carries progression. What the athlete has no reason to
-> open the app for **between** matches is anything of their own. That is the deliberate gap the
-> character feature is designed to fill, and it is the only place the product asks the child to work.
-
----
-
-## Persona: Parent
-
-| | Use case | Status | Evidence |
-|---|---|---|---|
-| P1 | Accept invite, create account, link to child | ✅ | **Verified live**: a parent signing up with the invited address was linked to the correct child in `player_parent_links`. Linking is idempotent — `link_parent_to_players_by_email` returned 0 because `provision_my_profile` had already created the link |
-| P2 | See child's season band | ✅ | RLS policy `Parents can read linked child matches`: `user_id IN (SELECT player_user_id FROM player_parent_links WHERE parent_user_id = auth.uid())` |
-| P3 | See child's match feed | ✅ | Same policy — the previously reported wall is gone |
-| P4 | Alerts | ✅ | **Verified live and extended.** Was two of the specced types (match, assessment); recognition awards are now a third, using the parent read access added in `20260612000001` — the positive moment a parent most wants, previously only visible on the child's passport. Recognition carries a lime dot rather than amber so good news is distinguishable at a glance |
-| P5 | See coach assessments + awards | ✅ | UI existed but returned 0 rows — no parent policy. Fixed by migration `20260612000001` (helper `squad_player_is_my_child`) granting parent SELECT on `coach_assessments` and `recognition_awards`. Applied to the database. The coach's private note stays player-only |
-| P6 | Profile | ✅ | `ParentProfilePage` |
-| P7 | See child's goals | ⬜ | Removed by design, with goals |
-
-> **Parent reality:** the parent journey is now complete — sign up, link to the child, and see
-> matches, season view, coach assessments and awards. Both previously reported walls (matches, then
-> assessments) were missing RLS policies behind finished UI, not missing features.
-
----
-
-## Persona: Club / Academy admin
-
-| | Use case | Status | Evidence |
-|---|---|---|---|
-| K1 | Sign up, create the organization | ⬜ | Removed for the pilot (TRAK-12, 26 Sep): Trak creates the admin and their academy with `admit_staff_member`. See `docs/pilot-runbook.md` |
-| K2 | Coaches join via academy code | ⬜ | Removed for the pilot (TRAK-12, 26 Sep): app roles can no longer execute either RPC, and only the operator sets `coach_details.organization_id` |
-| K3 | View coaches in the organization | ✅ | `ClubCoaches`, org-scoped RLS |
-| K4 | View squads across the org | ✅ | `ClubSquads` |
-| K5 | Org dashboard, band distribution | ✅ | `ClubHome`. **Bug found and fixed** (`3bd1507`): the headline read "TOTAL PLAYERS 1" above squads summing to 29 — it counted linked accounts while the squads counted roster rows |
-| K6 | Radar analytics | ✅ | Verified live: renders with its threshold rule stated (avg ≥ 7.5, 2+ assessments, last 60 days) and an empty state that explains *why* it is empty |
-| K7 | Club profile, manage join code | ✅ | `ClubProfile` |
-
-> **Club reality:** a working, org-scoped read layer. Visibility is opt-in — a club sees only coaches
-> who joined with its code — and there is no direct player management, by design.
-
----
-
-## Planned, not built
-
-| | Item | Status | Note |
-|---|---|---|---|
-| N1 | Character feature — values, flashcards, scenarios, real-world challenges | ❌ | Additive. Coach stays primary; this is the athlete's active role |
-| N2 | Character corner on the player card | ❌ | Separate axis. Must never feed the 0–10 performance band |
-| N3 | Terms of service, privacy policy, parental consent | ❌ | No matches anywhere in source. Blocker for real users given minors' data |
-| N4 | Billing / payments | ❌ | No Stripe/Paddle/checkout code. Cannot take money today |
-
-## The honest summary
-
-All four personas now work. The previous assessment's headline findings — "a teenager logs into a
-void" and "the parent sees nothing, forever" — no longer hold: the athlete receives coach feedback
-and carries an Evolution Card, and the parent's RLS wall has been fixed.
-
-With self-logging and goals deliberately removed, **there is no longer a broken loop in the app.**
-The coach logs, the athlete receives, the parent observes. What remains is not a defect list but a
-build list:
-
-1. **The character feature** — the athlete's only active role, and the reason for them to open the
-   app between matches. Gated on the sports psychologist review.
-2. **Legal and billing layers** — required before real users or revenue, independent of features.
-   Gated on the lawyer conversation.
-3. **Parent alerts (P4)** — the last feature never exercised live.
-
-**There are no open defects.** Every fault found in this round was fixed and verified.
-
-### Closed since the previous revision
-
-- **P5** — parent access to assessments and awards (migration `20260612000001`, applied).
-- **Housekeeping** — `MatchLog.tsx` and `CoachProgress.tsx` deleted (orphaned, unreferenced).
-- **Verification sweep** — C9, C10, C11, A7 and K6 exercised live against the database. None was
-  silently broken; the P5 pattern did not repeat. C11 proved stronger than documented: it is
-  squad-aware and renders pitch diagrams.
-- **K5 club dashboard** — "TOTAL PLAYERS 1" displayed above squads summing to 29. Fixed (`3bd1507`).
-
-### End-to-end chain — verified this session
-
-A complete coach → player → parent chain was created from scratch against the live database
-(with email confirmation temporarily disabled), and every link held:
-
-1. **Coach signs up** → `profiles` + `coach_details`, unique `invite_code` auto-generated.
-2. **Player signs up entering `TRK-<code>`** → `profiles` + `player_details`.
-3. **Player appears in that coach's squad** → `squad_players` row whose `coach_user_id` matches
-   the new coach exactly, with name, position, shirt number and age group copied across.
-4. **Parent email at signup** → `parent_invites` row, status `pending`.
-5. **Parent signs up with that address** → `player_parent_links` row pointing at the right child.
-
-This is the relationship backbone of the product and had never previously been exercised end to
-end. Code matching is tolerant of `TRK-` prefix, case and surrounding whitespace, and every step
-is idempotent — repeating it returns the existing row rather than creating a duplicate.
-
-### Signup / onboarding — verified this session
-
-- **Password rules did not match Supabase.** Every signup path checked only length while the
-  server also required upper, lower, digit **and symbol**, so realistic passwords were rejected
-  with a raw character-set dump. Fixed (`fd1a30e`) via `src/lib/password.ts`.
-- **Email confirmation is ON.** New accounts must click a link before they can sign in
-  (*"Email not confirmed"*), so a fresh coach → player → parent chain cannot be completed in a
-  test run without either mailbox access or temporarily disabling confirmation.
-- **`DevSetupPage` will fail on a fresh Supabase project** — it seeds with the password from `VITE_DEV_PASSWORD`, which has
-  no symbol. Existing dev accounts predate the policy and still work. Not changed: altering it
-  would break the logins currently in use.
-
-### Open observations, not yet investigated
-
-- The passport rendered **two identical "Player of the Week" entries** — possibly duplicate rows
-  in `recognition_awards`, possibly a render duplication.
-- A **U11s squad exists in the data**, but `AGE_GROUPS` in `constants.ts` starts at U13. The app
-  holds data for an age group it does not officially offer — relevant to the character feature's
-  age banding.
-
-### Change log — this round
-
-| Commit | Change |
+| Question | Source |
 |---|---|
-| `a282d34` | Quick Assess sliders start from the player's last assessment, not the midpoint |
-| `a1f957d` | Dropped the unused `player_goals` table |
-| `aa446c0` | Age groups single-sourced; range starts at U13 |
-| `acbfd2f` | Recognition awards added to the parent alerts feed |
-| `18b2fa4` | Installable app (manifest, icons) and a real share preview |
-| `bf74447` | **Security:** coach/club writes now require the writer's role |
+| What belongs in the first pilot? | [MVP Requirements](../MVP%20Requirements), J1–J8 and G1–G7 |
+| What passed on a deployed build, and when? | [Pilot journey index](use-cases/PILOT-INDEX.md), with build, device, role and date |
+| Which use-case tests block commits? | [Generated registry report](use-cases/README.md); `enforced`, `pending` and `parked` are harness statuses |
+| What wording remains unresolved? | [Use-case questions](use-cases/OPEN-QUESTIONS.md) and the open items in MVP Requirements |
+| Who owns implementation and acceptance? | The linked Linear issue; a PR or a passing local test is not completion |
+| How do changes reach production? | [Release gate](release/merge-gate.md) |
+| How are admission, recovery and incidents operated? | [Pilot runbook](pilot-runbook.md) and [restore procedure](release/s5-restore-rehearsal.md) |
+| What data and legal decisions need review? | [Data inventory](data-inventory.html) and [UAE counsel brief](lawyer-meeting-brief-uae.md) |
 
-### Earlier in this round
+## Journey map
 
-| Commit | Change |
-|---|---|
-| `f144688` | Parent access to assessments and awards unblocked (P5); dead code removed |
-| `3bd1507` | Club dashboard "TOTAL PLAYERS 1" contradicted squads summing to 29 |
-| `866949a` | Passport no longer scrolls sideways; PNG export geometry preserved |
-| `14976b2`, `42e43c3` | Dev seed made idempotent — it had duplicated data on every run |
-| `7c1593b` | Dead goals code removed (`PlayerGoals.tsx`, `lib/goals.ts`, seed block) |
-| `80826d3` | Cleanup script for duplicate rows from earlier seed runs (since applied) |
-| `fd1a30e` | Signup password rules aligned with what Supabase actually enforces |
-| `5c91efe` | A8 — players can now deliver a parent invite via a shareable link |
+The code links identify the audited source paths. Read the complete flow and
+its migrations before changing it; file existence is not behavioral proof.
 
-Two database migrations were applied by hand: `20260612000001` (parent read access) and
-`20260613000001` (parent invite sharing).
+| Journey | Required behavior | Source entry points | Evidence / remaining work |
+|---|---|---|---|
+| J1 Admission | Concierge roster; only rostered children and supplied guardians; child email optional; roster name throughout. No child self-linking or coach add-player path. | [Roster loader](../scripts/load-roster.mjs), [audited email correction](../scripts/correct-roster-email.mjs), [AuthContext](../src/contexts/AuthContext.tsx), [consent-before-account migration](../supabase/migrations/20260927090000_roster_consent_before_account.sql) | TRAK-8/48/84/103; dated synthetic evidence in PILOT-INDEX. Real academy configuration remains an admission gate. |
+| J2 Guardian consent | Guardian invitation names child and purpose; recorded consent, siblings, one-tap withdrawal and no wrong-adult delivery. | [Invitation handler](../supabase/functions/send-roster-invites/handler.ts), [parent consent](../src/lib/parent-consent.ts), [withdrawal](../src/lib/parent-consent-withdrawal.ts), [parent profile](../src/pages/parent/ParentProfilePage.tsx) | Runs 3–6 cover the invitation and consent journeys. Optional consent wording/enforcement discrepancy is open in MVP Requirements. |
+| J3 Activation and recovery | Consent first. Email invitations use a typed code; no-email children use guardian-created credentials. Resets invalidate child sessions; roster name is retained. | [AuthCode](../src/pages/AuthCode.tsx), [child-login creation](../supabase/functions/create-child-login/handler.ts), [password reset](../supabase/functions/reset-child-password/handler.ts), [guardian credentials](../src/components/parent/ParentChildCredentials.tsx) | TRAK-84/103/104/107; run-6 resend evidence on TRAK-11 and PR #243. Signup confirmation remains a separate [AuthConfirm](../src/pages/AuthConfirm.tsx) flow. |
+| J4 Completed sessions | Coach records matches and training with attendance, consent checks and explicit save failures. | [CoachAddSession](../src/pages/coach/CoachAddSession.tsx), [squad](../src/pages/coach/CoachSquadPage.tsx), `log_match_for_player` and session/attendance migrations | TRAK-7/102; synthetic run-3 through run-5 evidence. J8 conversion must preserve this flow. |
+| J5 Assessment and message | Assessment on an attended completed session; one Save publishes the child-facing message; private note is coach-only. | [CoachAssessPage](../src/pages/coach/CoachAssessPage.tsx), [coach player profile](../src/pages/coach/CoachPlayerProfilePage.tsx), [private/shared split](../supabase/migrations/20260918135500_private_notes_and_shared_feedback.sql) | TRAK-5/63/64/68/100; registry UC-C04 remains enforced. |
+| J6 Family readback | Child sees message and bands; parent sees selected child's bands/history, never the message or private notes. Failed load is distinguishable from empty data. | [PlayerHome](../src/pages/player/PlayerHome.tsx), [ParentHome](../src/pages/parent/ParentHome.tsx), [family context](../src/contexts/ParentChildrenContext.tsx), [parent-message exclusion](../supabase/migrations/20260926120000_parents_do_not_read_coach_messages.sql), [consent-aware family reads](../supabase/migrations/20260927130000_family_reads_follow_consent.sql) | TRAK-6/71/74/77; run-4 sibling-switch proof is recorded in PILOT-INDEX. |
+| J7 Measurement | Weekly coach-assessment counts and distinct player/parent assessment opens for the configured cohort; exclude synthetic accounts. | [J7 measurement views](../supabase/migrations/20260926130000_pilot_j7_measure.sql), PlayerHome and ParentHome telemetry, [runbook](pilot-runbook.md) | TRAK-10. A player open means the message was shown, not deliberate reading. Value targets and a better reading measure remain open. |
+| J8 Events | Weekly schedules; fixture import; match kit; family app views and private calendar links with one-tap setup; change/cancellation delivery; parent absence response and coach attendance; withdrawal and isolation; manual WhatsApp sharing. | [TRAK-25](https://linear.app/trak-football/issue/TRAK-25), its 18 scoped subissues TRAK-124–141, MVP Requirements J8, registry UC-E01–UC-E09 | Required before launch. TRAK-25 is Todo as of 8 Oct, 14:19 UTC; specific choices remain open in the slices. No implementation or real-phone rehearsal proof established. Existing calendar code is not proof of the new contract. |
 
-### Security review
+## Safety and parked surfaces
 
-A full authorization pass was run against the live database (`bf74447`). Read isolation was clean
-across player, coach, parent and anonymous access. One serious write flaw was found and fixed:
-policies on coach-owned tables checked ownership but never the writer's **role**, so any player
-could fabricate coach assessments and awards about themselves. Details in
-`docs/features-outstanding.md`.
+G1–G7 require tests as authenticated roles, including negative tests with
+positive controls. The existing synthetic rehearsal evidence does not cover
+J8's new event and calendar access paths. Inspect the [route table](../src/App.tsx),
+backend permissions and [G7 closure migration](../supabase/migrations/20260923110906_pilot_g7_disable_media_and_ai.sql)
+together: a retained screen or schema is not permission to use a parked feature.
 
-### Method note
+AI tools and AI schedule import, player passport/sharing, child photos, recognition,
+player-entered match logging and academy console remain outside the pilot.
+Lineups and broader matchday planning remain parked under
+[TRAK-123](https://linear.app/trak-football/issue/TRAK-123). Match kit, CSV/PDF
+fixture import and a parent's “Can't make it” response are now J8. Automatic
+WhatsApp posting and direct Google/Microsoft calendar connections remain out.
+Coach-only birthday
+reminders on the day and profile preferred-foot/stat additions are post-pilot;
+any UAE FA synchronization is future work, with no height or weight collection
+in that agreed scope. Account-data export is distinct from the parked player
+passport: `export_my_account()` exists, while the self-service screen remains
+tracked under [TRAK-81](https://linear.app/trak-football/issue/TRAK-81).
 
-Policies and files were confirmed to *exist* in source; they were not exercised against a live
-database. Items marked ⚠️ are present but not behaviourally verified.
+## Limits of this audit
+
+- The production records cited in PILOT-INDEX are dated synthetic rehearsals,
+  not new production checks performed by this documentation update.
+- J8 now has 18 scoped slices. Its remaining choices, feature controls and
+  operator procedures still need resolution, implementation and proof; see
+  [OPEN-QUESTIONS](use-cases/OPEN-QUESTIONS.md). The pilot change policy and
+  launch date remain open.
+- No PITR and an unrehearsed restore are recorded as accepted pilot risks in
+  TRAK-23 (2 Oct). Academy briefing and risk disclosure have not yet happened.
+- Counsel sign-off, academy agreement, actual cohort configuration and the
+  founder-majority admission decision still belong to the launch gate.
+- Source migration counts, historical dashboards and old “no open defects”
+  statements are not readiness evidence. Use the dated issue and deployment
+  record for the question being answered.

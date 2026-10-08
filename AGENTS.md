@@ -1,133 +1,103 @@
 # AGENTS.md — Trak Football
 
-Quick orientation for AI agents and new contributors.
+## Before changing the product
 
-## Pilot work and coordination
+Read [MVP Requirements](MVP%20Requirements) and the assigned Linear issue.
+The first real-child pilot requires J1–J8 and G1–G7; J8 events are required
+but still await implementation and rehearsal. A configured date never admits
+children. [PILOT-INDEX](docs/use-cases/PILOT-INDEX.md) separates required scope
+from recorded deployment evidence.
 
-Read `MVP Requirements` and your assigned Linear issue before coding. Agents
-work only their human's issues. Use one PR per issue with its `TRAK-#` key and
-J/G (or scope/launch-gate) purpose in the title. Record blockers in Linear.
-Imad posts the current merge queue in #coding-agents-at-work. Follow
-`docs/release/merge-gate.md`.
-Merged work enters Verifying; the owner moves it to Done once deployed proof is on the issue.
+Agents work their human's assigned issues. Use a task branch and one PR per
+issue, with its `TRAK-#` and J/G or scope/launch-gate purpose in the title.
+Follow [the release gate](docs/release/merge-gate.md) before review, merge or
+release. Imad coordinates the merge queue in #coding-agents-at-work. The owner
+moves merged work to Verifying, then Done after recording deployed proof.
 
-## Tech Stack
+This repository is public. Keep academy identities, competitor analysis and
+private meeting/artifact links out of new documentation and evidence. Use
+synthetic identities in public test records. Current unresolved decisions stay
+explicitly open; an issue being Done does not prove a newer requirement passed.
 
-| Layer | Technology |
+## Find the implementation
+
+| Task | Start here |
 |---|---|
-| Framework | React 18 + TypeScript + Vite |
-| Styling | Tailwind CSS (dark theme, DM Sans + DM Mono fonts) |
-| Backend | Supabase (Postgres + Auth + Storage + Edge Functions) |
-| Testing | Vitest + React Testing Library |
-| Linting | ESLint 9 (flat config) |
-| Monitoring | Sentry (PROD only) |
+| Routes, parked screens and callers | `src/App.tsx`, then the routed component |
+| Role guard | `src/components/layout/RouteGuard.tsx` |
+| Authentication and admission | `src/contexts/AuthContext.tsx`, `src/lib/parent-consent.ts` |
+| Database client and generated types | `src/integrations/supabase/` |
+| Rating and bands | `src/lib/rating-engine.ts`, `src/lib/types.ts` (`BANDS`) |
+| Shared UI | `src/components/trak/` |
+| Backend permissions and RPCs | `supabase/migrations/` in filename order |
+| Pilot operations and recovery | `docs/pilot-runbook.md`, `docs/release/s5-restore-rehearsal.md` |
+| Use-case contracts | `docs/use-cases/registry.yaml`, `docs/use-cases/OPEN-QUESTIONS.md` |
 
-## Key File Locations
+Read the actual route and its callers before editing a component.
+`CoachQuickMatchLog` is not the routed J4 match entry. `/coach/quick-assess`
+remains hidden; the pilot uses `/coach/assess`. Existing AI handlers return
+`PILOT_FEATURE_DISABLED`; their presence is not permission to enable them.
 
-| What | Where |
-|---|---|
-| Auth state + sign-up flow | `src/contexts/AuthContext.tsx` |
-| Rating algorithm | `src/lib/rating-engine.ts` |
-| Band config (colors, words) | `src/lib/types.ts` — `BANDS` constant |
-| Supabase client | `src/integrations/supabase/client.ts` |
-| Route definitions | `src/App.tsx` |
-| Route guard (role-based) | `src/components/RouteGuard.tsx` |
-| Shared components | `src/components/trak/` |
-| Navigation bar | `src/components/trak/NavBar.tsx` |
-| Error boundary | `src/components/trak/ErrorBoundary.tsx` |
-| Database migrations | `supabase/migrations/` (apply in filename order) |
-| Coach AI edge function | `supabase/functions/coach-assistant/` |
-| Pilot scope: P0 journeys, coming soon, launch gate | `MVP Requirements` (progress: `docs/use-cases/PILOT-INDEX.md`) |
+## Data and UI conventions
 
-## Common Patterns
+- Use `.maybeSingle()` when zero or one row is expected, arrays for one-to-many
+  relationships, and handle errors separately from empty results.
+- `coach_assessments.squad_player_id` refers to a `squad_players` row, not an
+  Auth user ID. Resolve the player's squad rows before querying assessments.
+- Coach match logging uses `log_match_for_player`; direct inserts do not
+  substitute for its consent and assignment checks.
+- Follow the existing mobile shell and design tokens. Use `BANDS` for band
+  wording and colors; keep player-visible messages separate from private notes.
+- The roster owns the child's name. A child email is optional. Use the existing
+  guardian-created login/recovery flow for a child without email (TRAK-84).
+- Before changing consent, read the discrepancy recorded in MVP J2: optional
+  parent visibility is stored but does not control family reads. Reconcile
+  wording and enforcement; do not promise a choice the backend ignores.
 
-### Supabase queries
-Always use `.maybeSingle()` (not `.single()`) when a row might not exist — `.single()` throws on no row.
+## Local work and checks
 
-```tsx
-const { data } = await supabase
-  .from('profiles')
-  .select('full_name')
-  .eq('user_id', userId)
-  .maybeSingle()   // ← never .single()
+Use Node 22.15+ within 22.x and the npm version in `package.json`.
+
+```sh
+npm ci --legacy-peer-deps
+cp .env.example .env  # configure a disposable development project
+npm run dev          # localhost:8080
+npm test             # source tests, once
+npm run test:watch    # watch mode
+npm run test:harness
+npm run typecheck
+npm run lint
+npm run uc:check
+npm run build
 ```
 
-### Assessments — squad_player_id ≠ user_id
-`coach_assessments.squad_player_id` is a row ID in `squad_players`, NOT a `user_id`. To fetch a player's assessments:
+`package.json` and `.github/workflows/ci.yml` define the current commands and
+full CI checks. Run checks appropriate to the change and the release gate.
+Pending use cases report failures without blocking; they are not passes.
+Edit `registry.yaml`, then regenerate its README with `npm run uc:report`.
+Preserve enforced contracts and the registry lock/version rules.
 
-```tsx
-const { data: squadRows } = await supabase
-  .from('squad_players').select('id').eq('linked_player_id', user.id)
-const ids = squadRows?.map(r => r.id) ?? []
-const { data: assessments } = await supabase
-  .from('coach_assessments').select('*').in('squad_player_id', ids)
-```
+Local dev accounts read `VITE_DEV_PASSWORD`. Keep credentials out of source,
+evidence and built assets; a DEV-only route does not guarantee its chunk is
+excluded from a production bundle.
 
-### Match logging for coach
-Direct insert to `matches` is blocked by RLS (coach ≠ player). Use the SECURITY DEFINER RPC:
+## Database and deployment
 
-```tsx
-await supabase.rpc('log_match_for_player', {
-  p_user_id: playerUserId,
-  p_opponent: '...',
-  // ...
-})
-```
+Create new migrations; keep applied migration history unchanged. Replay on a
+disposable database and test permissions under real authenticated roles. Some
+historical migrations cannot safely be rerun. New public tables start without
+`anon`/`authenticated` privileges; grant only operations backed by policies.
 
-### Component structure
-All pages use `<MobileShell>` as the root wrapper with max-width 430px.
-Colours and fonts follow the dark design system — never use hardcoded colour strings outside of the `BANDS` config.
+Production is `trakfootball.com` on Vercel, with Supabase as the backend.
+The canonical main workflow applies pending migrations and deploys functions
+before deploying the frontend. Vercel's Git integration is disabled. A PR
+preview shares the backend; there is no separate staging environment. Use
+reviewed deployments for production changes, never development SQL on the
+shared project.
 
-### Band → colour mapping
-```tsx
-import { BANDS } from '@/lib/types'
-import { scoreToBand } from '@/lib/rating-engine'
-
-const band = scoreToBand(score)           // 'steady' | 'good' | etc.
-const cfg  = BANDS.find(b => b.word.toLowerCase() === band)
-// cfg.color — hex/rgba colour string
-// cfg.word  — display word e.g. "Steady"
-```
-
-## Running Locally
-
-```bash
-npm install
-cp .env.example .env   # fill in Supabase URL + anon key
-npm run dev            # http://localhost:8080
-npm test -- --run      # run tests once
-npm run build          # production build
-```
-
-## Dev Accounts (local seed)
-
-Use the DevSetupPage (`/dev-setup`, PIN: `013`) to quick-login as any test role.
-Real credentials live in your local Supabase project — never committed.
-
-## TDD Workflow
-
-Tests live alongside source in `src/**/__tests__/` and `src/__tests__/`.
-Run `npm test` (watch mode) while making changes.
-CI blocks merges if any test fails or the build errors.
-
-## Database Migrations
-
-Apply migrations in filename order via Supabase SQL Editor (Supabase CLI not required).
-All migrations use `IF NOT EXISTS` / `IF EXISTS` guards — safe to re-run.
-
-Key migrations to be aware of:
-- `20260425000001_security_hardening.sql` — RLS policies + performance indexes
-- `20260526000002_rls_explicit_operations.sql` — replaces FOR ALL with explicit ops
-- `20260526000003_gdpr_delete_account.sql` — `delete_my_account()` RPC
-
-## Deployment
-
-Production is hosted on Vercel at `trakfootball.com` (auto-deploys from `main`).
-`vercel.json` holds the SPA rewrite, the long-cache rules for `/assets` and `/fonts`, and the
-security headers — the CSP there pins the Supabase and Sentry hosts, so a new external origin
-needs adding to `connect-src` or it will be blocked in production.
-
-Supabase project is at `xbykbqolvqyqmipikuae.supabase.co`.
-
-Lovable is no longer the host, but three edge functions still call its AI gateway with
-`LOVABLE_API_KEY` — `coach-assistant`, `parse-schedule` and `player-feedback`.
+`supabase/config.toml` controls function JWT settings. `vercel.json` controls
+rewrites, caching and CSP; verify allowed origins when adding an integration.
+Email templates are managed separately in the dashboard. Read the
+[README export warning](README.md#email-templates-live-export-required) before
+touching them: repository copies are stale and must await the complete live
+exports. Signup confirmation has a different flow from the three code emails.

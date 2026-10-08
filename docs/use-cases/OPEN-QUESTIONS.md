@@ -1,4 +1,10 @@
-# Open Questions for the Product Owner
+# Use-case questions and recorded decisions
+
+Reviewed 8 October 2026. Resolved entries below are historical observations,
+not current defects. Q-2026-09-23-01 was already resolved on 23 September;
+academy admission and the parked code-linking flows are not awaiting a new vote.
+The current product contract is [MVP Requirements](../../MVP%20Requirements),
+and deployment evidence is in [PILOT-INDEX](./PILOT-INDEX.md).
 
 Entries are appended by `scripts/uc-check.mjs` when a use case fails, drifts,
 or is edited without authority. Resolve one by picking an option, doing it,
@@ -147,11 +153,10 @@ Spec (v2) says:
   THEN A coach with an empty squad sees an explicit empty message
   THEN A failed load is distinguishable from an empty squad
 
-PO decision needed — one of:
-  [ ] Spec stands -> code bug, fix the code, no registry change
+Decision recorded:
+  [x] Spec stands -> code bug, fix the code, no registry change
   [ ] Spec changes -> bump spec_version, add changelog entry, dev updates test
   [ ] Spec ambiguous -> rewrite given/when/then, bump spec_version
-Status: OPEN
 
 Resolution: the UC-C03 specification stands unchanged. TRAK-47 follows the
 approved academy-admission decision and removes Add Player, so its explicit
@@ -161,3 +166,73 @@ check and added an explicit error assertion. No registry or lock change.
 UC-C02 v2 tests remain unchanged and pending backend proof from TRAK-48.
 
 Status: RESOLVED 2026-09-24
+
+
+---
+
+## Q-2026-10-08-J8 · UC-E01–UC-E09 · Remaining events decisions
+Raised: 2026-10-08 · updated against TRAK-25 at 14:19 UTC · J8
+
+Events are required for the first real-child pilot. [TRAK-25](https://linear.app/trak-football/issue/TRAK-25)
+is now Todo with nine decided acceptance checks and 18 scoped subissues,
+TRAK-124–141. The nine checks are pending registry cases. Kit, CSV/PDF fixture
+import, per-person calendar links, one-tap subscription, guardian absence
+responses, coach register attendance and manual WhatsApp sharing are decided
+scope. The earlier “detailed spec in progress” description is superseded.
+
+The remaining choices belong to the individual slices:
+
+| Decision / proof still needed | Source |
+|---|---|
+| Choose the event-email provider/API, processing region and sender address/domain; prove SPF/DKIM and Gmail/Microsoft 365 inbox delivery. | [TRAK-126](https://linear.app/trak-football/issue/TRAK-126), Kostas; region also belongs in the PR #247 legal review |
+| Choose typed-PDF parsing in the browser with an approved dependency, or operator conversion. CSV import can proceed separately; AI import stays out. | [TRAK-129](https://linear.app/trak-football/issue/TRAK-129), Imad |
+| Choose the token-authorized feed endpoint and document it; obtain counsel review before real-family calendar links. | [TRAK-132](https://linear.app/trak-football/issue/TRAK-132) |
+| Establish the supported Android/Google setup path on real phones. A fallback proposal does not by itself satisfy the one-tap acceptance check. | [TRAK-133](https://linear.app/trak-football/issue/TRAK-133), UC-E09 |
+| Decide whether players also receive change emails; guardian delivery is the current requirement. | [TRAK-135](https://linear.app/trak-football/issue/TRAK-135) |
+| Approve installation if the reminder scheduler requires pg_cron; no installation is implied by this document. | [TRAK-136](https://linear.app/trak-football/issue/TRAK-136) |
+
+Two source ambiguities also need resolution before executable procedures are
+written: how to prove that a mistaken event has never been seen before allowing
+deletion (TRAK-127), and how a multi-child parent's feed preserves consented
+siblings when one child's consent is withdrawn (TRAK-132). Withdrawal must
+remove the withdrawn child's events on the next request; calendar-client cached
+copies need real-device evidence rather than a promise of immediate removal.
+
+The per-academy off switch is specified in TRAK-124. “Get a new link” revoking
+the previous link is specified in TRAK-133. These are no longer unwritten scope,
+but implementation and operator proof are still required. Do not treat the
+existing rehearsal results or the old parked calendar as proof that these new
+cases pass. No acceptance check is relaxed by this question.
+
+Status: OPEN
+
+## Q-2026-10-08-UC-X01 · UC-X01 · Unauthorized reads: error or zero visible rows
+Raised: 2026-10-08 · documentation audit · G3
+
+The historical pending UC-X01 says an unauthorized read must be rejected
+"rather than returning an empty result". G3 requires no unauthorized data to
+be returned; the deployed evidence in PILOT-INDEX uses zero unauthorized rows
+and positive controls showing the rows exist. Those are different contracts.
+
+Decision needed: does the registry require an explicit error on every
+unauthorized read, or does zero visible data with a positive control satisfy
+G3? Keep UC-X01 unchanged until that distinction is resolved. It has no enforced
+test to weaken, and this audit does not claim that its current wording passes.
+
+Status: OPEN
+
+## Decisions recorded by this audit (8 October 2026)
+
+- UC-A11 v2 follows the consent-first email-code and guardian-created no-email
+  login paths in J3 (TRAK-84, TRAK-103, TRAK-104, TRAK-107).
+- UC-P03 v2 reflects coach-recorded matches (J4/J6); UC-P06 v2 excludes the
+  coach message as well as private notes from parent views (TRAK-63).
+- UC-T01 v2 follows J7's weekly coach-assessment and distinct family-open
+  measurements (TRAK-10). An open means content was shown, not read.
+- UC-E01–UC-E09 add the nine J8 checks without claiming implementation or
+  promoting any case to enforced. Historical sources are commit-pinned.
+
+The pilot change rule, release schedule and value targets remain open in
+[MVP Requirements](../../MVP%20Requirements). They are not settled by a passing
+harness. The academy briefing and operational-risk disclosures are still to
+happen; founder acceptance of a risk is not evidence it has been disclosed.

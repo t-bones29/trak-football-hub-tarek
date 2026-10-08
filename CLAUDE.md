@@ -1,143 +1,16 @@
 # CLAUDE.md — Trak Football
 
-Quick orientation for AI agents and new contributors.
+Read [AGENTS.md](AGENTS.md) for the contributor workflow, implementation entry
+points, data conventions, local commands and deployment safeguards.
 
-## Current work and coordination
+Before coding, read [MVP Requirements](MVP%20Requirements) and your assigned
+Linear issue. The current pilot contract is J1–J8 and G1–G7. Events are now
+required for the first real-child pilot, with nine acceptance checks and 18
+implementation issues on TRAK-25. Implementation and rehearsal remain pending;
+unresolved design choices are marked in the issues. The September synthetic demo is not a launch
+approval. A date in configuration never overrides the launch gate.
 
-Read [MVP Requirements](MVP%20Requirements) first. It defines what the first pilot must do, what shows "coming soon" and the launch gate. Every PR links one assigned TRAK issue and names the journey (J1–J7), guarantee (G1–G7), or scope/launch gate it serves. Parked feature work waits. Track progress in [the pilot journey index](docs/use-cases/PILOT-INDEX.md), and follow [the release gate](docs/release/merge-gate.md). [The September 25 readiness plan](docs/pilot-readiness-2026-09-25.md) is the 18 September task matrix. `docs/features-outstanding.md` is historical, not current readiness evidence. Read the actual route and callers before fixing a component; `CoachQuickMatchLog` is currently unrouted.
-
-No issue, no code: agents work their human's assigned Linear issues. Include `TRAK-# [J/G]` (or `[scope]` for scope work) in the branch/PR naming, following the existing agent branch prefix where required, and never work on main. Keep one PR attached to one issue and record blockers as Linear dependencies. Workflow: Todo → In Progress → In Review → Verifying after merge → Done once the owner posts deployed proof on the issue. Announce migrations and shared-file changes in #coding-agents-at-work before editing. Imad coordinates merges and posts the current merge queue there. A PR is approved by a verified review with a verdict (MERGE / MERGE AFTER / DO NOT MERGE) from someone who did not author it — see *What approval means* in the release gate. Commit only green; never bypass the pre-commit hook. Never apply development SQL to the shared live Supabase project. Use a disposable local database and new migrations; production deployment follows reviewed merges.
-
-Friday 25 September is a **synthetic demo**. Real children join only when the launch gate in MVP Requirements passes and a founder majority agrees. A date never admits anyone, including `pilot_config.starts_on`.
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Framework | React 18 + TypeScript + Vite |
-| Styling | Tailwind CSS (dark theme, DM Sans + DM Mono fonts) |
-| Backend | Supabase (Postgres + Auth + Storage + Edge Functions) |
-| Testing | Vitest + React Testing Library |
-| Linting | ESLint 9 (flat config) |
-| Monitoring | Sentry (PROD only) |
-
-## Key File Locations
-
-| What | Where |
-|---|---|
-| Auth state + sign-up flow | `src/contexts/AuthContext.tsx` |
-| Rating algorithm | `src/lib/rating-engine.ts` |
-| Band config (colors, words) | `src/lib/types.ts` — `BANDS` constant |
-| Supabase client | `src/integrations/supabase/client.ts` |
-| Route definitions | `src/App.tsx` |
-| Route guard (role-based) | `src/components/layout/RouteGuard.tsx` |
-| Shared components | `src/components/trak/` |
-| Navigation bar | `src/components/trak/NavBar.tsx` |
-| Error boundary | `src/components/trak/ErrorBoundary.tsx` |
-| Database migrations | `supabase/migrations/` (apply in filename order) |
-| Coach AI edge function | `supabase/functions/coach-assistant/` |
-
-## Common Patterns
-
-### Supabase queries
-Use `.maybeSingle()` when zero or one row is expected. Use arrays for one-to-many relationships such as a parent's children. Always inspect query errors; a failed request is not an empty result.
-
-```tsx
-const { data } = await supabase
-  .from('profiles')
-  .select('full_name')
-  .eq('user_id', userId)
-  .maybeSingle()   // ← never .single()
-```
-
-### Assessments — squad_player_id ≠ user_id
-`coach_assessments.squad_player_id` is a row ID in `squad_players`, NOT a `user_id`. To fetch a player's assessments:
-
-```tsx
-const { data: squadRows } = await supabase
-  .from('squad_players').select('id').eq('linked_player_id', user.id)
-const ids = squadRows?.map(r => r.id) ?? []
-const { data: assessments } = await supabase
-  .from('coach_assessments').select('*').in('squad_player_id', ids)
-```
-
-### Match logging for coach
-Direct insert to `matches` is blocked by RLS (coach ≠ player). Use the SECURITY DEFINER RPC:
-
-```tsx
-await supabase.rpc('log_match_for_player', {
-  p_user_id: playerUserId,
-  p_opponent: '...',
-  // ...
-})
-```
-
-### Component structure
-All pages use `<MobileShell>` as the root wrapper with max-width 430px.
-Colours and fonts follow the dark design system — never use hardcoded colour strings outside of the `BANDS` config.
-
-### Band → colour mapping
-```tsx
-import { BANDS } from '@/lib/types'
-import { scoreToBand } from '@/lib/rating-engine'
-
-const band = scoreToBand(score)           // 'steady' | 'good' | etc.
-const cfg  = BANDS.find(b => b.word.toLowerCase() === band)
-// cfg.color — hex/rgba colour string
-// cfg.word  — display word e.g. "Steady"
-```
-
-## Running Locally
-
-```bash
-npm ci --legacy-peer-deps
-cp .env.example .env   # fill in Supabase URL + anon key
-npm run dev            # http://localhost:8080
-npm test              # source tests, once
-npm run test:harness  # MSW and use-case harness contracts
-npm run typecheck
-npm run uc:check      # enforced use cases block; pending failures are reported
-npm run build          # production build
-```
-
-## Dev Accounts (local seed)
-
-Use the DevSetupPage (`/dev-setup`, PIN: `013`) to quick-login as any test role.
-Set `VITE_DEV_PASSWORD` in your local `.env` first — the dev accounts read it
-from the environment and refuse to sign in without it.
-
-This line previously read *"Real credentials live in your local Supabase
-project — never committed."* That was not true: the password was a literal in
-`LandingPage.tsx`, `DevSetupPage.tsx` and `DevSwitcher.tsx`, and the first of
-those is in the entry bundle, so it shipped to every visitor of the public
-site. Do not reintroduce a literal — `import.meta.env.DEV` guards which routes
-register, not which chunks Rollup emits.
-
-## TDD Workflow
-
-Tests live alongside source in `src/**/__tests__/` and `src/__tests__/`.
-Run `npm run test:watch` while making changes. Add focused regression coverage for changed security and user journeys.
-CI fails for enforced tests/build errors. Pending use-case failures currently do not block CI; review them explicitly. Branch protection must be independently enabled before CI can enforce a merge gate.
-
-## Database Migrations
-
-Create a new migration using the Supabase CLI; never edit existing migration files. Replay migrations in order on a disposable database and test with actual authenticated roles. Do not assume individual historical migrations are safe to rerun. The main CI workflow applies pending migrations and deploys edge functions before the frontend.
-
-Since `20260919120001`, new tables in `public` are born with no privileges for `anon` or `authenticated`. A migration that creates a table must `GRANT` exactly the operations its policies back (see `20260918000002_ai_call_quota.sql` for the pattern); `anon` needs nothing.
-
-Key migrations to be aware of:
-- `20260425000001_security_hardening.sql` — RLS policies + performance indexes
-- `20260526000002_rls_explicit_operations.sql` — replaces FOR ALL with explicit ops
-- `20260526000003_gdpr_delete_account.sql` — `delete_my_account()` RPC
-
-## Deployment
-
-Production is hosted on Vercel at `trakfootball.com` (auto-deploys from `main`).
-`vercel.json` holds the SPA rewrite, the long-cache rules for `/assets` and `/fonts`, and the
-security headers — the CSP there pins the Supabase and Sentry hosts, so a new external origin
-needs adding to `connect-src` or it will be blocked in production.
-
-Supabase project is at `xbykbqolvqyqmipikuae.supabase.co`.
-
-Lovable is no longer the host, but three edge functions still call its AI gateway with
-`LOVABLE_API_KEY` — `coach-assistant`, `parse-schedule` and `player-feedback`.
+For readiness, read [PILOT-INDEX](docs/use-cases/PILOT-INDEX.md). Before opening,
+reviewing or merging a PR, read [the release gate](docs/release/merge-gate.md).
+The rule for changes during the pilot is still open; preserve the existing
+independent-review requirement until a replacement is agreed and implemented.

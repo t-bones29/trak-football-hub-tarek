@@ -1,4 +1,9 @@
-<title>Pilot Rehearsal Script</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trak Pilot Rehearsal Script</title>
 <style>
   :root {
     --ground:#0A0A0B; --surface:#121314; --surface-2:#17191A;
@@ -96,267 +101,252 @@
     .step .uc   { grid-column:2; padding-top:0; }
     .step .body { grid-column:2; }
   }
-</style>
-
-<div class="wrap">
-
+</style></head>
+<body>
+<main class="wrap">
 <header class="mast">
-  <div class="eyebrow">Week &minus;2 &middot; before the academy sees anything</div>
+  <div class="eyebrow">Updated 8 October 2026 · synthetic families only</div>
   <h1>Rehearsal script</h1>
-  <p class="lede">All fourteen use cases, walked against the seeded rehearsal academy. Roughly 45 minutes. The point is to find what breaks while it is still cheap &mdash; today's smoke test was about instrumentation, not coverage, and it still surfaced two serious bugs.</p>
+  <p class="lede">Walk the J1–J8 journeys and G1–G7 guarantees on the deployed build, using two real phones and approved inboxes. Record what happens; this checklist is not evidence that a run passed.</p>
 </header>
-
-<section>
-  <div class="sec-head">
-    <div class="eyebrow">Before you start</div>
-    <h2>Setup</h2>
-  </div>
-
-  <div class="card">
-    <p class="small">Everything below uses the seeded rehearsal academy. Password for every account: whatever <code>TRAK_REHEARSAL_PASSWORD</code> was set to when the seed was run. It is deliberately not written down here.</p>
-    <div class="who-band"><span class="role">Director</span><code>director@rehearsal.trak.test</code></div>
-    <div class="who-band"><span class="role">Coach U15</span><code>coach.u15@rehearsal.trak.test</code><span class="tiny">16 players, 6 fixtures</span></div>
-    <div class="who-band"><span class="role">Coach U17</span><code>coach.u17@rehearsal.trak.test</code><span class="tiny">second squad</span></div>
-    <div class="who-band"><span class="role">Player</span><code>&lt;firstname&gt;.&lt;lastname&gt;@rehearsal.trak.test</code></div>
-    <div class="who-band"><span class="role">Parent</span><code>parent.&lt;firstname&gt;.&lt;lastname&gt;@rehearsal.trak.test</code></div>
-  </div>
-
-  <div class="callout">
-    <h3>Grouped by role, not in demo order</h3>
-    <p>The pilot scope runs the use cases in narrative order because that is the story you tell the academy. <b>For a rehearsal that ordering is wrong</b> &mdash; it means signing in and out a dozen times. This groups them by who is signed in, which is the same fourteen cases in about a third of the time.</p>
-  </div>
-
-  <div class="alarm">
-    <h3>Log, do not fix</h3>
-    <p>When something breaks, write down <b>what you did, what you expected, what happened</b>, and carry on. Stopping to fix things mid-run means the later cases never get walked &mdash; and the later ones are precisely the ones nobody has looked at.</p>
-    <p><b>Keep the browser console open throughout.</b> Two of today's bugs were only visible there: the assessment failure printed a Postgres error, and a silent telemetry failure prints <code>[telemetry] "&lt;event&gt;" failed:</code>.</p>
-  </div>
+<section aria-labelledby="setup"><div class="sec-head"><h2 id="setup">Before the run</h2></div>
+<div class="alarm"><p><b>Events are required and not yet implemented.</b> TRAK-25 now has nine acceptance checks and 18 implementation issues (TRAK-124–141), all Todo when reviewed on 8 October. The final rehearsal cannot pass until all nine checks below pass. Earlier journey passes do not waive the event gate.</p></div>
+<ul class="plain">
+<li>Read <a href="../MVP%20Requirements">MVP Requirements</a>, the <a href="pilot-runbook.md">operational runbook</a> and the <a href="release/merge-gate.md">release gate</a>. Record commit, workflow, served build, backend target, operator and start time.</li>
+<li>Use designated synthetic roles and an approved roster: two siblings and a child whose guardian withholds consent, plus a separate academy for isolation tests. Exercise both email activation and a child without email. Prepare a synthetic squad of at least 25 players for the size check.</li>
+<li>Use approved Gmail and Microsoft/Outlook inboxes for real delivery checks. Prepare an iPhone, an Android phone with Google Calendar and an Outlook account; record device, browser and calendar-app versions. Do not use invented addresses at real mail providers.</li>
+<li>For J8, enable events for the designated synthetic academy and leave the other off, using the implemented operator control once available. Record the switch state and test its off behavior; this script supplies no speculative SQL.</li>
+<li>There is no staging environment. Coordinate writes and fixture cleanup on the shared backend. Existing seed data does not prove admission, consent, email delivery or calendar behavior.</li>
+<li>Record pilot cohort/window and <code>count_synthetic</code> before changing them for a designated run; restore the agreed state afterwards. Real-pilot reports must exclude synthetic accounts.</li>
+<li>The academy briefing is still pending. No staging, daily backups retained for seven days, no PITR and an unrehearsed restore remain disclosures to make before launch; no recovery duration is proven.</li>
+</ul>
+<p class="small">Check boxes are working notes only. Put durable, redacted evidence on the assigned issue: commit · deployment · device · synthetic identity · date/time · expected/observed result. Do not include passwords, codes, tokens, full calendar links or family data.</p>
 </section>
+<section aria-labelledby="admission"><div class="sec-head"><h2 id="admission">Admission, consent and recovery</h2></div>
 
-<section>
-  <div class="sec-head">
-    <div class="eyebrow">Part 1 &middot; Club admin</div>
-    <h2>Sign in as the director</h2>
-    <p class="small"><code>director@rehearsal.trak.test</code></p>
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J1 Load the academy-supplied roster">
+  <span class="uc">J1</span>
+  <div class="body">
+    <h3>Load the academy-supplied roster</h3>
+    <p>Use the operator loader dry run, review it, then apply only the agreed synthetic rows. Verify the coach sees each child’s correct waiting/approved state. Repeat the load and check that it does not create duplicates.</p>
+    <p class="look"><b>Record:</b> Exact roster IDs, expected membership, repeat result and any partial-load failure. A coach cannot add a child or link one by a TRK code.</p>
   </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-01</div>
-    <div class="body">
-      <h3>Academy setup, squads, coach invites</h3>
-      <p class="small">Open the club home, squads and coaches screens. The academy already exists from seeding, so you are checking it <b>reads</b> correctly, then create one new squad by hand.</p>
-      <span class="route">/club/home &middot; /club/squads &middot; /club/coaches</span>
-      <p class="look"><b>Look for:</b> does the player count match the squads beneath it? That exact mismatch was a real bug (<code>3bd1507</code>). Three coaches should be listed, one with no squad of their own.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-13</div>
-    <div class="body">
-      <span class="chip c-risk">Never opened</span>
-      <h3>Squad radar</h3>
-      <p class="small">Band distribution, most improved, players needing attention.</p>
-      <span class="route">/club/radar</span>
-      <p class="look"><b>Look for:</b> does it render at all, and are the numbers consistent with the squads? <b>Nobody has opened this since the data was seeded.</b> The scope makes this hypothesis H5 &mdash; the director must be able to name one thing here they did not already know.</p>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="sec-head">
-    <div class="eyebrow">Part 2 &middot; Coach</div>
-    <h2>Sign in as the U15 coach</h2>
-    <p class="small"><code>coach.u15@rehearsal.trak.test</code> &mdash; the longest stretch, and the one the pilot's load-bearing hypothesis depends on</p>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-02</div>
-    <div class="body">
-      <h3>Build the roster</h3>
-      <p class="small">Add three players using <b>Save &amp; add another</b>, then a fourth with <b>Save &amp; finish</b>. <b>Time it with a stopwatch.</b></p>
-      <span class="route">/coach/squad/add</span>
-      <p class="look"><b>Look for:</b> does the age group persist between players? Does focus return to the name field? Does Enter save? The elapsed time is UC-02's real number &mdash; the scope calls roster setup the single biggest adoption barrier.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-06</div>
-    <div class="body">
-      <h3>Assess a player &mdash; full</h3>
-      <p class="small"><b>Move every slider to a different, uneven value.</b> Add a written note. Save.</p>
-      <span class="route">/coach/assess</span>
-      <p class="look"><b>Look for:</b> it must save. This is where the card-stats bug lived — decimals into integer columns failed roughly three saves in four, and <b>only when sliders differ</b>. Even values pass every time, which is why it went unnoticed. Session is optional; leave it blank once deliberately.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-06</div>
-    <div class="body">
-      <h3>Assess &mdash; quick variant</h3>
-      <p class="small">Run quick-assess across the whole squad this time, to the end.</p>
-      <span class="route">/coach/quick-assess</span>
-      <p class="look"><b>Look for:</b> do sliders start from each player's previous assessment rather than the midpoint? Time the full run &mdash; the target is under 90 seconds per player.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-05</div>
-    <div class="body">
-      <h3>Log a match for the squad</h3>
-      <p class="small">Set a date in the past, pick opponent and score, use the bulk select, then expand two players and give them different minutes, goals and cards.</p>
-      <span class="route">/coach/sessions/quick</span>
-      <p class="look"><b>Look for:</b> this route now opens the full session screen preset to Match. Confirm per-player detail actually saves &mdash; the old screen gave every player identical inputs, which flattened the bands.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-09</div>
-    <div class="body">
-      <h3>Award recognition</h3>
-      <span class="route">/coach/recognition &rarr; /coach/award</span>
-      <p class="look"><b>Look for:</b> the award appears on that player's profile afterwards. Check the player side later in Part 3 &mdash; a duplicate "Player of the Week" on the passport is a known open observation.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-11</div>
-    <div class="body">
-      <h3>Paste fixtures and parse</h3>
-      <p class="small">Use <b>real, messy fixture text</b> — ideally the academy's own, or something equally untidy. Not a clean sample.</p>
-      <span class="route">/coach/schedule</span>
-      <p class="look"><b>Look for:</b> how many events come back, and how many are right? Parser accuracy on real text is the whole point; a clean sample proves nothing.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-12</div>
-    <div class="body">
-      <h3>Coach assistant</h3>
-      <p class="small">Ask for a session plan. Then ask a follow-up.</p>
-      <span class="route">/coach/assistant</span>
-      <p class="look"><b>Look for:</b> does a plan come back with drill diagrams, and is it something you would actually run at training? H6 is about <b>repeat</b> use, so the test is whether the output is good enough to come back to.</p>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="sec-head">
-    <div class="eyebrow">Part 3 &middot; Player</div>
-    <h2>Sign in as a player</h2>
-    <p class="small">Pick one you just assessed, so there is fresh data &mdash; e.g. <code>nikos.ioannou@rehearsal.trak.test</code></p>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-03</div>
-    <div class="body">
-      <h3>Signup and squad linking</h3>
-      <p class="small">Rather than reusing a seeded account, <b>create a brand new player</b> with the coach's TRK code from Part 2.</p>
-      <span class="route">/onboarding/player</span>
-      <p class="look"><b>Look for:</b> after signup, does the coach's squad show <b>one</b> row for them, not two? Signup now claims the coach's typed roster entry instead of adding a duplicate &mdash; this is the check that it works.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-07</div>
-    <div class="body">
-      <span class="chip c-warn">Only half-tested</span>
-      <h3>Open the coach's feedback</h3>
-      <p class="small">From the <b>home screen card</b>, not a direct URL.</p>
-      <span class="route">/player/home &rarr; /player/feedback/:id</span>
-      <p class="look"><b>Look for:</b> the card must appear. It previously rendered only when the assessment carried a written note. Test <b>both</b> — an assessment with a note and one without. Both must reach the screen and produce sensible advice.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-08</div>
-    <div class="body">
-      <span class="chip c-risk">Never opened</span>
-      <h3>Passport, evolution card, profile trend</h3>
-      <span class="route">/player/passport &middot; /player/evolution &middot; /player/profile</span>
-      <p class="look"><b>Look for:</b> all three render with six weeks of seeded history. Check the passport on a narrow phone — horizontal overflow was fixed once (<code>866949a</code>) and is worth re-checking. Watch for duplicate award entries.</p>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="sec-head">
-    <div class="eyebrow">Part 4 &middot; Parent</div>
-    <h2>Sign in as a parent</h2>
-    <p class="small"><code>parent.&lt;firstname&gt;.&lt;lastname&gt;@rehearsal.trak.test</code></p>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-04</div>
-    <div class="body">
-      <h3>Parent invite and linking</h3>
-      <p class="small">From the new player account in Part 3, send a parent invite, then redeem it on a fresh parent account.</p>
-      <span class="route">/parent-invite &rarr; /parent/home</span>
-      <p class="look"><b>Look for:</b> the share sheet appears, the link pre-fills the email, and the child's data shows up after linking. The scope calls this the most fragile step and it is safeguarding-critical.</p>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-10</div>
-    <div class="body">
-      <span class="chip c-warn">Only half-tested</span>
-      <h3>Child summary, match history, alerts</h3>
-      <p class="small">Only the alerts feed has been opened. <b>Open all three.</b></p>
-      <span class="route">/parent/home &middot; /parent/matches &middot; /parent/alerts</span>
-      <p class="look"><b>Look for:</b> the parent sees bands, never raw numbers, and never the coach's private note. Confirm the assessment and award you created in Part 2 appear here.</p>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="sec-head">
-    <div class="eyebrow">Part 5 &middot; Any role</div>
-    <h2>Settings and deletion</h2>
-  </div>
-
-  <div class="step">
-    <div class="box"></div>
-    <div class="uc">UC-14</div>
-    <div class="body">
-      <span class="chip c-warn">RPC tested, button not</span>
-      <h3>Delete an account through the UI</h3>
-      <p class="small">Use the <b>new player account</b> from Part 3. Change a setting first, then delete.</p>
-      <span class="route">/settings &rarr; delete account</span>
-      <p class="look"><b>Look for:</b> the underlying function is verified working &mdash; an account with matches, assessments and a linked parent was deleted cleanly. <b>What is untested is the Settings button that calls it.</b> Confirm sign-in afterwards fails, and that the coach's squad no longer shows them.</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Then confirm nothing is orphaned</h3>
-    <pre>SELECT * FROM squad_duplicate_candidates;
-SELECT * FROM pilot_safeguarding_checks;</pre>
-    <p class="small">Both should return <b>zero rows</b>. The first catches duplicate roster entries from signup, the second catches cross-role leakage. Any row is explained in writing before the pilot continues.</p>
-  </div>
-</section>
-
-<section>
-  <div class="sec-head">
-    <div class="eyebrow">After the run</div>
-    <h2>Reset</h2>
-  </div>
-  <div class="card">
-    <p class="small">The rehearsal run leaves extra players, matches and assessments behind. Before real data arrives:</p>
-    <pre>node seed-pilot-rehearsal.mjs --purge</pre>
-    <p class="small">Then set the pilot window to the real values &mdash; <code>starts_on</code> to the pilot start date and <code>org_id</code> to the academy's own organisation, once the director has created it. Leaving <code>org_id</code> pointing at Rehearsal FC makes every cohort metric wrong.</p>
-  </div>
-</section>
-
 </div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J2 Guardian invitation and consent">
+  <span class="uc">J2</span>
+  <div class="body">
+    <h3>Guardian invitation and consent</h3>
+    <p>Send the approved guardian invitation through the roster flow to Gmail and Microsoft/Outlook inboxes. Check that it reaches the inbox, not spam, in under 60 seconds, with the correct child, academy, purpose and safe-sender/Trak branding. Open its code-entry page; verify that opening the page alone does not consume the code, then type the code. Confirm both siblings appear and grant each approval separately. Test the second-child email for an existing guardian as well as a new guardian. Keep the other family withheld.</p>
+    <p class="look"><b>Record:</b> Send and inbox-receipt times for each provider, sender/branding, correct recipient and child, sibling list and distinct consent records. Do not mark mail sent as mail received.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J3 Activate email and username children">
+  <span class="uc">J3</span>
+  <div class="body">
+    <h3>Activate email and username children</h3>
+    <p>Before consent, verify activation/development access is refused. After consent, complete the email child’s invitation and verify the roster name. Cover new and existing accounts, expired and already-used codes, and resend: the old code must fail and the latest must work. Record an unavailable resend flow as open. For a child without email, have the guardian create a username/password through the consent flow, then sign in as that child.</p>
+    <p class="look"><b>Record:</b> No child email sent before consent; expected outcomes for each account/code/resend case; the no-email child needs no mailbox. The child cannot choose a different identity, age or academy.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J3 Exercise password recovery">
+  <span class="uc">J3</span>
+  <div class="body">
+    <h3>Exercise password recovery</h3>
+    <p>For an email account, use Forgot password, type the latest recovery code, and set a password. Reject a used or wrong code. For a username child, the guardian opens Profile → the child’s login card → Set a new password while the child’s other device remains open.</p>
+    <p class="look"><b>Record:</b> Actual sign-out timing, weak-password feedback, and the partial-failure message if sessions cannot be ended. A copied access token may survive until expiry; UI sign-out alone does not prove token revocation.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="G2/G5 Check wrong-account boundaries">
+  <span class="uc">G2/G5</span>
+  <div class="body">
+    <h3>Check wrong-account boundaries</h3>
+    <p>Attempt the invitation/recovery flow with another account already signed in. Check sibling consent and child login details stay attached to the intended guardian and child.</p>
+    <p class="look"><b>Record:</b> Expected refusals and controls showing the correct account can complete its own flow. Never substitute a real third-party inbox.</p>
+  </div>
+</div>
+</section>
+<section aria-labelledby="coach"><div class="sec-head"><h2 id="coach">Coach records and family readback</h2></div>
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J4 Log and edit sessions">
+  <span class="uc">J4</span>
+  <div class="body">
+    <h3>Log and edit sessions</h3>
+    <p>As the assigned coach, log training with attendance and a match with distinct per-player minutes, goals and assists. Check saved values and edit a saved session. Run the agreed check on the synthetic squad of at least 25 players.</p>
+    <p class="look"><b>Record:</b> No invented match defaults, duplicate writes or unexplained errors; attendance and edits persist. Use the routed session flow, not an old Quick Match Log component.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J5 Assess and publish">
+  <span class="uc">J5</span>
+  <div class="body">
+    <h3>Assess and publish</h3>
+    <p>Assess a player for a completed session they attended. Change the six ratings and write a player message plus a distinct private note. Publish, then edit and save. Also try an unattended session. For a child awaiting consent, the coach may view the academy-supplied profile, but assessment creation must be blocked.</p>
+    <p class="look"><b>Record:</b> Pre-consent profile visibility and blocked assessment creation separately; one assessment per player/session; only the intended coach can write; refused writes preserve an understandable outcome. Quick Assess is outside pilot scope.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J6 Read as each family member">
+  <span class="uc">J6</span>
+  <div class="body">
+    <h3>Read as each family member</h3>
+    <p>As the player, open home and session history; confirm bands, bars and the published message. As guardian, inspect both assessed siblings, their history and alerts; switch child and return. Exercise a failed load and an empty history.</p>
+    <p class="look"><b>Record:</b> The selected child’s records only. Neither child nor parent sees private notes; parents do not see the coach message. Failed loads show errors rather than a false empty state.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J7 Read the weekly measures">
+  <span class="uc">J7</span>
+  <div class="body">
+    <h3>Read the weekly measures</h3>
+    <p>Have an authorized operator query pilot_j7_this_week using the runbook. Compare the counts with the actions just performed; repeat a view/save and check the distinct counting behavior.</p>
+    <p class="look"><b>Record:</b> Assessments per coach, player opens and parent opens within one minute, including the cohort/window and synthetic setting. A player “open” means home displayed the message, not deliberate reading.</p>
+  </div>
+</div>
+</section>
+<section aria-labelledby="guarantees"><div class="sec-head"><h2 id="guarantees">Withdrawal and isolation</h2></div>
+<div class="step">
+  <input class="box" type="checkbox" aria-label="G1/G6 Withdraw with sessions open">
+  <span class="uc">G1/G6</span>
+  <div class="body">
+    <h3>Withdraw with sessions open</h3>
+    <p>Keep a coach form, child app and a second guardian session open. Withdraw the last active approval for one child and retry the coach save. Check readback and return to the other open tabs. Separately withdraw approval before a child finishes setup.</p>
+    <p class="look"><b>Record:</b> Server write refusal and withdrawn content behavior, including timing and offline limitations. With multiple guardians, distinguish one withdrawn approval from withdrawal of the last active approval.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="G3–G7 Run negative checks under real roles">
+  <span class="uc">G3–G7</span>
+  <div class="body">
+    <h3>Run negative checks under real roles</h3>
+    <p>Use the deployed-backend checks for family/academy isolation, private notes, wrong-recipient protection and pilot-disabled AI/photos/sharing. Include positive controls showing the target data exists and is accessible to its correct owner.</p>
+    <p class="look"><b>Record:</b> Test identity, expected denial, actual result and control result. Source inspection, service-role reads or an empty database cannot prove isolation.</p>
+  </div>
+</div>
+</section>
+<section aria-labelledby="events"><div class="sec-head"><div class="eyebrow">J8 · TRAK-25 · required before real families receive events</div><h2 id="events">Events and phone calendars</h2></div>
+<p class="small">These are the nine acceptance outcomes in <a href="https://linear.app/trak-football/issue/TRAK-25">TRAK-25</a>, as expanded on 8 October, and MVP Requirements. The numbers below identify acceptance checks, not the implementation issue numbers. The behavior is specified but remains unbuilt. Once implemented, record all nine on the same deployed build with synthetic families and real phones.</p>
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J8 check 1 Weekly scheduling">
+  <span class="uc">J8 · 1</span>
+  <div class="body">
+    <h3>Weekly scheduling</h3>
+    <p>Create eight weeks of weekly training.</p>
+    <p class="look"><b>Record:</b> Elapsed time is under two minutes.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J8 check 2 Changes and cancellations reach families">
+  <span class="uc">J8 · 2</span>
+  <div class="body">
+    <h3>Changes and cancellations reach families</h3>
+    <p>Change and cancel events; check every affected player and guardian on next app load, including the selected child’s parent bell and the player’s Next up marker. Test changes for today and tomorrow in Dubai time, including venue and meet time. Make three quick edits and check that only the final change is emailed.</p>
+    <p class="look"><b>Record:</b> Correct, consented guardian recipients only; same-day email arrives in Gmail and Microsoft inboxes, not spam, within 60 seconds. Record send time and inbox receipt metadata. No child name in the subject, coach notes or state-changing link. Record failed-delivery visibility/retry and the implemented edit-collapse window; no window is assumed here.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J8 check 3 Apple, Google and Outlook subscriptions">
+  <span class="uc">J8 · 3</span>
+  <div class="body">
+    <h3>Apple, Google and Outlook subscriptions</h3>
+    <p>Subscribe with a personal link using Apple, Google and Outlook on the two real phones. Create, change and cancel events, then refresh each calendar.</p>
+    <p class="look"><b>Record:</b> New, changed and cancelled events appear after refresh with no duplicates, stable occurrence IDs and correct Dubai times. Record the feed’s last-fetch time separately from the calendar’s displayed update and any cache delay.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J8 check 4 Withdrawal removes event access">
+  <span class="uc">J8 · 4</span>
+  <div class="body">
+    <h3>Withdrawal removes event access</h3>
+    <p>Withdraw the child’s consent, then request the app’s events and the existing calendar link again.</p>
+    <p class="look"><b>Record:</b> The child’s events are absent on the next request; an authorized sibling remains available. Record what a calendar app retains in its local cache separately. Replacing a link or removing access cannot erase an already downloaded copy.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J8 check 5 No cross-academy event visibility">
+  <span class="uc">J8 · 5</span>
+  <div class="body">
+    <h3>No cross-academy event visibility</h3>
+    <p>Run real-role SQL access tests against populated events in two academies. Verify the disabled academy separately, including refused writes and missing/error configuration failing closed. Exercise authorized access while enabled so the switch cannot mask a missing isolation policy.</p>
+    <p class="look"><b>Record:</b> All unauthorized reads are refused/empty; positive controls show the same rows to the correct academy.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J8 check 6 No child names in calendar entries">
+  <span class="uc">J8 · 6</span>
+  <div class="body">
+    <h3>No child names in calendar entries</h3>
+    <p>Inspect the actual subscription entries and displayed calendar content.</p>
+    <p class="look"><b>Record:</b> No child name or coach note in an event title, description, location or other calendar entry field. Inspect content returned by the feed as well as what each calendar displays.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J8 check 7 Past event becomes an attended session">
+  <span class="uc">J8 · 7</span>
+  <div class="body">
+    <h3>Past event becomes an attended session</h3>
+    <p>On a past event, Take register should prefill everyone present except reported absences. Correct the actual attendance, save to create/link a completed session in one step, then retry. A match should open the existing match log with its date and opponent.</p>
+    <p class="look"><b>Record:</b> Correct attendance/session result and no duplicate on retry; a withdrawn child cannot be marked present. Assessment selection offers attended sessions, and J4/J5 remain green. Future events must not expose Take register.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J8 check 8 Complete the final two-phone run">
+  <span class="uc">J8 · 8</span>
+  <div class="body">
+    <h3>Complete the final two-phone run</h3>
+    <p>Complete the production rehearsal with synthetic families, the iPhone, Android phone and all three calendar apps. After J8, rerun J1–J7 and G1–G7 on this same final build.</p>
+    <p class="look"><b>Record:</b> One evidence record ties all nine checks to the build, devices, roles and UTC times before any real family receives events. Preserve database readback, Auth/function logs, inbox receipt times and calendar refresh results before cleanup. A workaround is not a pass.</p>
+  </div>
+</div>
+
+<div class="step">
+  <input class="box" type="checkbox" aria-label="J8 check 9 One-tap calendar setup">
+  <span class="uc">J8 · 9</span>
+  <div class="body">
+    <h3>One-tap calendar setup</h3>
+    <p>As parent and player, use the last signup step to add the personal calendar on iPhone, Android/Google and Outlook. The native choice appears first, with other calendars available. Also skip setup, finish signup and subscribe later from Settings → Calendar.</p>
+    <p class="look"><b>Record:</b> The real device handoff and subscription result for each provider, including Android behavior. Settings → Calendar → Get a new link must make the old link unusable on its next fetch. Record the working resubscription procedure; do not treat an unproved fallback as one-tap success.</p>
+  </div>
+</div>
+<div class="card">
+<h3>Exercise the specified operating cases as their slices are delivered</h3>
+<p class="small">These support the nine checks; they do not create a tenth acceptance check or claim that a pending feature is available.</p>
+<ul class="plain">
+<li><b>Import and kit (TRAK-129):</b> preview 12 CSV fixtures, correct a bad row, confirm 12 matches and re-import with zero duplicates. Verify date, kickoff, meet time, opponent, home/away, venue and kit. No writes occur before confirmation. PDF handling remains an open implementation choice; no AI parsing.</li>
+<li><b>Absence (TRAK-137):</b> the linked guardian reports Can't make it for one child, optionally adds a reason, then undoes before start. The coach sees it after one reload; the sibling is unaffected. Guardians of another child, withdrawn consent and players cannot submit it; families cannot see others’ absences.</li>
+<li><b>Reminders (TRAK-136):</b> check a two-day-ahead reminder, one email per guardian/day across their children, Settings → Notifications opt-out, and safe rerun without duplicate mail. Omit cancelled events and withdrawn children; email contains no unsubscribe action link.</li>
+<li><b>Manual WhatsApp share (TRAK-139):</b> on iPhone and Android, inspect training, match and cancellation text, including kit where applicable. No child names or absence lists. The coach must choose a destination and send; opening the share control must not send.</li>
+<li><b>Additional links (TRAK-140):</b> this lower-priority slice follows the core work. When delivered, verify named extra links, one/all-child and match/all-event choices, independent revocation and last-fetch data. Revoking an extra link must not break the guardian’s own link; withdrawal/departure removes the affected access.</li>
+</ul>
+</div>
+<div class="callout"><p><b>Still unresolved:</b> ordinary-email provider/region/sender, PDF method, feed endpoint, Android handoff/fallback, player change emails, and exact operator recovery controls. Use the implemented specification for commands and retry procedures. Kit and absence reporting are in J8; lineups and broader matchday planning remain parked.</p></div>
+</section>
+<section aria-labelledby="close"><div class="sec-head"><h2 id="close">Close the run</h2></div>
+<ul class="plain">
+<li>Record every failed or unrun check as open. A wrong recipient, consent bypass or cross-child read pauses the affected scope and new admissions; follow the runbook’s incident process.</li>
+<li>Preserve evidence before coordinating cleanup. Do not run a blanket purge on shared rehearsal data. Verify the intended pilot configuration and synthetic-account exclusion afterwards.</li>
+<li>Update the assigned issues and journey index with the executed result. A founder-majority launch decision also needs the nontechnical launch gates, including academy briefing and counsel; a successful rehearsal alone does not admit real children.</li>
+</ul>
+</section>
+</main>
+</body>
+</html>

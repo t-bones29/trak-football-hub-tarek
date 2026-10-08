@@ -20,25 +20,34 @@ is in [MVP Requirements](../../MVP%20Requirements); progress is in the
 | UC-C04 | coach | Assess a player on six sliders producing a band | REQ-002 | 1, 2 |
 | UC-X02 | system | A failed load never renders as a false empty state | REQ-004 | 1 |
 
-## Pending — 15
+## Pending — 24
 
 | ID | Actor | Use case | Requirement | Tier |
 |----|-------|----------|-------------|------|
 | UC-A09 | athlete | See the coach's assessment as band and six category bars | REQ-002 | 1, 2 |
 | UC-C02 | coach | Coaches do not add players; the academy roster decides the squad | J1 | 1, 2 |
 | UC-P02 | parent | See the child's season band | REQ-004 | 1, 2 |
-| UC-P03 | parent | See the child's match feed | REQ-004 | 1, 2 |
-| UC-P06 | parent | See the coach's assessments | REQ-004 | 1, 2 |
+| UC-P03 | parent | See the child's coach-recorded match feed | J6 | 1, 2 |
+| UC-P06 | parent | See the coach's assessment bands without the message or private note | J6 | 1, 2 |
 | UC-P07 | parent | A guardian gives recorded consent for a child under 18 | J2 | 1, 2 |
-| UC-T01 | system | Every enforced use case emits telemetry answering the Q4 metric | REQ-005 | 2 |
+| UC-T01 | system | Answer the weekly coach-assessment and family-open counts in one minute | J7 | 2 |
 | UC-X01 | system | No role reads data belonging to anyone they are not linked to | REQ-004 | 2 |
 | UC-X03 | system | Only rostered children and academy-supplied guardians get a profile | J1 | 2 |
 | UC-X04 | system | A player cannot change their own date of birth | J1 | 2 |
 | UC-P08 | parent | Guardian invitation is sent at admission to the academy-supplied address | J2 | 2 |
 | UC-P09 | parent | Withdraw consent in one tap, effective immediately | J2 | 1, 2 |
-| UC-A11 | athlete | Activate an account only after a guardian consents | J3 | 1, 2 |
+| UC-A11 | athlete | Activate and recover a rostered child's account only through the approved paths | J3 | 1, 2 |
 | UC-C09 | coach | Log a match for the squad with no invented defaults | J4 | 1, 2 |
 | UC-C10 | coach | Log a training session | J4 | 1 |
+| UC-E01 | coach | Create eight weeks of training with weekly repeat | J8 | 1, 2 |
+| UC-E02 | system | Deliver event changes and cancellations to affected families | J8 | 1, 2 |
+| UC-E03 | system | Keep Apple, Google and Outlook calendar subscriptions consistent | J8 | 2 |
+| UC-E04 | parent | Remove event access after consent withdrawal | J8 | 1, 2 |
+| UC-E05 | system | Refuse cross-academy event visibility | J8 | 2 |
+| UC-E06 | system | Keep children's names out of calendar entries | J8 | 2 |
+| UC-E07 | coach | Convert a past event into a completed session with attendance | J8 | 1, 2 |
+| UC-E08 | system | Rehearse events on two real phones before real-family access | J8 | 2 |
+| UC-E09 | system | Subscribe a family member's phone calendar in one tap from signup | J8 | 2 |
 
 ## Parked — 9
 
