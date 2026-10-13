@@ -64,6 +64,18 @@ const LINK = new RegExp([
   String.raw`\b(?:[a-z0-9-]+\.)+(?:${BARE_TLDS})(?![\w-]|\.[\w-])`,
 ].join('|'), 'i')
 
+/**
+ * TRAK-161 (Kostas, #293): why families won't see a family note, so the coach
+ * is told as they type. The same two checks child_events() applies through
+ * family_safe_reason(). With the squad's names unknown, only a link can be
+ * judged here; the database still applies the name rule.
+ */
+export function familyNoteProblem(note: string, childNames: string[] | null): 'link' | 'name' | null {
+  const value = note.trim()
+  if (LINK.test(value)) return 'link'
+  return namePatterns(childNames ?? []).some(p => p.test(value)) ? 'name' : null
+}
+
 const TRAK_LINE = 'Full schedule in Trak: https://trakfootball.com'
 const KIND_LABEL: Record<ShareableEvent['kind'], string> = {
   training: 'Training',

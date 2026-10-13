@@ -144,6 +144,23 @@ describe('J8.4: the coach creates, edits and cancels events', () => {
     expect(inserted).not.toHaveProperty('notes')
   })
 
+  // TRAK-161 follow-up (Kostas, #293): told as they type, not after families miss it.
+  it('warns as the coach types a note families won\'t see', async () => {
+    server.use(table('squad_players', [{ age_group: 'U15', player_name: 'Omar Haddad', status: 'active' }]))
+    await open()
+    await userEvent.click(screen.getByRole('button', { name: 'Add event' }))
+    const sheet = screen.getByRole('dialog', { name: 'New event' })
+    const note = within(sheet).getByLabelText('Note for families')
+    await userEvent.type(note, 'Bring water')
+    expect(within(sheet).queryByText(/families won't see this note/i)).toBeNull()
+    await userEvent.type(note, ', Omar brings the bibs')
+    expect(await within(sheet).findByText("Families won't see this note: it names a player.")).toBeInTheDocument()
+    await userEvent.clear(note)
+    await userEvent.type(note, 'Directions: maps.app.goo.gl/abc')
+    expect(within(sheet).getByText("Families won't see this note: it has a link.")).toBeInTheDocument()
+    expect(note).toHaveAccessibleDescription(/it has a link/)
+  })
+
   it('picks a venue the coach has used before', async () => {
     await open()
     await userEvent.click(screen.getByRole('button', { name: 'Add event' }))

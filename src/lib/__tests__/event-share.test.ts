@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shareableFromRow, squadLabelFrom, whatsAppShareText, whatsAppShareUrl, type ShareableEvent } from '../event-share'
+import { familyNoteProblem, shareableFromRow, squadLabelFrom, whatsAppShareText, whatsAppShareUrl, type ShareableEvent } from '../event-share'
 
 // TRAK-139 (J8.16): "Share to WhatsApp" pre-writes the event for the coach's
 // group. The coach picks the chat and taps send; nothing is sent by Trak.
@@ -185,5 +185,34 @@ describe('squadLabelFrom: the coach\'s squad, for the message title', () => {
   it('falls back to "Squad" when no age group is known', () => {
     expect(squadLabelFrom([])).toBe('Squad')
     expect(squadLabelFrom([{ age_group: null }, { age_group: '  ' }])).toBe('Squad')
+  })
+})
+
+// TRAK-161 follow-up (Kostas, #293): the coach learns as they type that a
+// note won't reach families, by the same rule child_events() applies.
+describe('familyNoteProblem: why families won\'t see a note', () => {
+  const squad = ['Omar Haddad', 'Lucas Petit']
+
+  it('says a note with a link is hidden', () => {
+    for (const note of ['Directions: maps.app.goo.gl/abc', 'See https://example.com/x', 'www.example.org']) {
+      expect(familyNoteProblem(note, squad)).toBe('link')
+    }
+  })
+
+  it('says a note naming a player on the squad is hidden, by first name or surname', () => {
+    expect(familyNoteProblem('Omar brings the bibs', squad)).toBe('name')
+    expect(familyNoteProblem('Petit is captain', squad)).toBe('name')
+  })
+
+  it('has nothing to say about a clean note, a blank one, or a word that only contains a name', () => {
+    expect(familyNoteProblem('Bring extra water, it\'s a hot day', squad)).toBeNull()
+    expect(familyNoteProblem('   ', squad)).toBeNull()
+    expect(familyNoteProblem('Omarina Park entrance', squad)).toBeNull()
+    expect(familyNoteProblem('Abu Dhabi trip', ['Zaid Abu Example'])).toBeNull()
+  })
+
+  it('still catches a link while the squad\'s names are unknown, and claims nothing about names', () => {
+    expect(familyNoteProblem('maps.app.goo.gl/abc', null)).toBe('link')
+    expect(familyNoteProblem('Omar brings the bibs', null)).toBeNull()
   })
 })
