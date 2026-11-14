@@ -103,7 +103,6 @@ npm exec vitest -- run src/lib/__tests__/kit-templates.test.ts src/components/tr
 node scripts/check-kit-preview.mjs  # Vite must already be running on port 8086
 node scripts/test-db.mjs --team-kits-review
 npm run build
-npx playwright test --config playwright.pilot.config.ts team-kits.spec.ts
 ```
 
 The browser check uses Chromium and saves screenshots in `test-results/kits/`.
