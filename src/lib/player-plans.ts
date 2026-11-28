@@ -41,7 +41,7 @@ export function usePlayerPlan(eventId: string | null) {
   })
 }
 
-/** "Today we're working on": the plan's parts, once each, in order. */
+/** "What we're working on" (not "Today": the plan shows before and after the day too): the plan's parts, once each, in order. */
 export const workingOn = (plan: PlanPractice[]) => [...new Set(plan.map(p => p.part || p.name))].join(' · ')
 
 /** The plan's Got it, when the player has one to give or take back. */

@@ -12,7 +12,7 @@ import type { PlayerEvent } from '@/lib/player-events'
 
 /* TRAK-601 (coach–player P13, Makis's list of 23 Nov; Imad, 27 Nov: drills and set-up): a training's plan as its squad's
    players read it. One Got it for the whole plan, at the top: Updated and asked again after the coach saves a change,
-   Undo until the training starts. "Today we're working on" is the plan's parts. Each practice: its part and minutes, the
+   Undo until the training starts. "What we're working on" is the plan's parts. Each practice: its part and minutes, the
    drill, its picture when it's one of Trak's, the set-up and its details. Nothing for a training without a plan, or
    where the academy has tasks off. */
 

@@ -78,7 +78,7 @@ for (const [width, height] of [[390, 844], [1280, 800]] as const) {
     await page.goto(`/player/event/${TRAINING.id}`)
     const plan = page.getByRole('region', { name: 'Training plan' })
     await expect(plan.getByText('Warm-up · Passing · Game')).toBeVisible()
-    await expect(plan.getByRole('heading', { level: 3 })).toHaveText(['Today we’re working on', 'Tag games', 'Triangle passing', 'Small-sided game'])
+    await expect(plan.getByRole('heading', { level: 3 })).toHaveText(['What we’re working on', 'Tag games', 'Triangle passing', 'Small-sided game'])
     await expect(plan.locator('svg')).toHaveCount(1)
     await expect(page.getByText(/SECRET/)).toHaveCount(0)
     expect(await noSidewaysScroll(page)).toBeLessThanOrEqual(0)
