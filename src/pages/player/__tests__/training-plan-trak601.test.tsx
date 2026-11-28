@@ -75,7 +75,7 @@ describe('TRAK-601: the squad reads its training plan', { timeout: 20_000 }, () 
   it('the training\'s page shows what it works on, each drill\'s set-up and details, and a Trak drill\'s picture', async () => {
     renderApp('/player/event/tuesday')
     const card = await planCard()
-    expect(within(card).getByText('Today we’re working on').nextElementSibling).toHaveTextContent('Warm-up · Passing')
+    expect(within(card).getByText('What we’re working on').nextElementSibling).toHaveTextContent('Warm-up · Passing')
     const [tag, triangle] = within(card).getAllByRole('listitem').filter(li => li.parentElement?.tagName === 'OL')
     expect(within(tag).getByRole('heading', { name: 'Tag games' })).toBeInTheDocument()
     expect(within(tag).getByText('Warm-up · 10 min')).toBeInTheDocument()
