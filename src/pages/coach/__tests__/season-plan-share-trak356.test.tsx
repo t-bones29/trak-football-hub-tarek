@@ -5,7 +5,7 @@
  * whose Cancel changes nothing, a removed objective shows in its history, and Share the changes clears the banner.
  * Synthetic people; the stand-in backend keeps the plan's list of changes as the database does.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
@@ -50,6 +50,10 @@ const idsOf = (url: URL) => (url.searchParams.get('id') ?? '').replace(/^(eq\.|i
 const note = (part: string) => { if (plan.shared_at && !plan.unshared_parts.includes(part)) plan = { ...plan, unshared_parts: [...plan.unshared_parts, part] } }
 
 beforeEach(() => {
+  // Today is NOW: on the real clock the plan's first report day (Sun 29 Nov, the season's third month) fell due, and
+  // Home's "Reports ready" to-do hid the suggestions these tests open.
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(NOW))
   localStorage.clear()
   COACH = { id: `coach-356-${++n}` }
   plan = { id: 'plan-1', squad: 'U16', starts_on: '2026-09-01', ends_on: '2027-06-30', shared_at: null, positions_known: 'yes',
@@ -127,7 +131,7 @@ beforeEach(() => {
     table('formations', []),
   )
 })
-afterEach(() => { cleanup(); forgetScreens(); localStorage.clear() })
+afterEach(() => { cleanup(); forgetScreens(); localStorage.clear(); vi.useRealTimers() })
 
 const user = () => userEvent.setup()
 const TICK = 'I’ve talked objectives through with the players, face to face'

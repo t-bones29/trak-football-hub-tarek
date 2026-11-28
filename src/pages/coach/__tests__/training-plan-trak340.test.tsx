@@ -15,6 +15,7 @@ import { server } from '../../../../tests/msw/server'
 import { table, rpc, SUPABASE_URL } from '../../../../tests/msw/supabase'
 import { partsFromShape, standardShape, usageOf } from '@/lib/training/parts'
 import { LIBRARY, START_LEVEL, step } from '@/lib/training/library'
+import { localParts } from '@/lib/event-time'
 
 /** A Library drill by name (TRAK-392: Plan session's drills are the Library's). */
 const lib = (name: string) => LIBRARY.find(d => d.name === name)!
@@ -22,8 +23,10 @@ const lib = (name: string) => LIBRARY.find(d => d.name === name)!
 const MINUTE = 60_000
 const DAY = 24 * 60 * MINUTE
 const onTheMinute = (ms: number) => Math.ceil(ms / MINUTE) * MINUTE
-const ymd = (ms: number) => new Date(ms).toISOString().slice(0, 10)
-const hm = (ms: number) => new Date(ms).toISOString().slice(11, 16)
+// The local date and time, as the app reads event_date and start_time: a UTC slice is a day behind from Dubai's midnight
+// until 04:00, so starts_at and event_date disagreed and the Upcoming row lost its Draft badge.
+const ymd = (ms: number) => localParts(new Date(ms).toISOString()).date
+const hm = (ms: number) => localParts(new Date(ms).toISOString()).time
 
 let n = 0
 let COACH = { id: 'coach-340' }
