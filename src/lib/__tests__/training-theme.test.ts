@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { TRAINING_THEMES, catalogueLink, trainingThemeFrom } from '@/lib/training-theme'
+import { TRAINING_THEMES, catalogueLink, trainingThemeFrom, trainingThemesFrom } from '@/lib/training-theme'
 import { blankForm, formToRow, rowToForm, type EventRow } from '@/lib/coach-events'
 
 /**
@@ -43,26 +43,29 @@ describe('the seven themes are the catalogue libraries', () => {
   })
 })
 
-describe('the event form stores the theme on trainings only', () => {
-  const form = { ...blankForm('2030-01-07'), time: '17:00' }
+describe('TRAK-635: the event form stores the themes on trainings only', () => {
+  const form = { ...blankForm('2030-01-07'), time: '17:00', title: 'Finishing' }
 
-  it('writes the chosen theme on a training', () => {
-    expect(formToRow({ ...form, theme: 'transition' })).toMatchObject({ training_theme: 'transition' })
-    expect(formToRow(form)).toMatchObject({ training_theme: null })
+  it('writes every chosen theme on a training, or none', () => {
+    expect(formToRow({ ...form, themes: ['transition'] })).toMatchObject({ training_themes: ['transition'] })
+    expect(formToRow({ ...form, themes: ['attacking', 'transition'] })).toMatchObject({ training_themes: ['attacking', 'transition'] })
+    expect(formToRow(form)).toMatchObject({ training_themes: [] })
   })
 
-  it('drops it when the event is a match or other', () => {
-    expect(formToRow({ ...form, kind: 'match', opponent: 'Synthetic FC', theme: 'transition' })).toMatchObject({ training_theme: null })
-    expect(formToRow({ ...form, kind: 'other', title: 'Photo', theme: 'transition' })).toMatchObject({ training_theme: null })
+  it('drops them when the event is a match or other', () => {
+    expect(formToRow({ ...form, kind: 'match', opponent: 'Synthetic FC', themes: ['transition'] })).toMatchObject({ training_themes: [] })
+    expect(formToRow({ ...form, kind: 'other', title: 'Photo', themes: ['transition'] })).toMatchObject({ training_themes: [] })
   })
 
-  it('reads it back for an edit', () => {
+  it('reads them back for an edit: known keys only, each once, in the listed order', () => {
     const row: EventRow = {
       id: 'e1', title: 'Training', event_type: 'training', starts_at: '2030-01-07T13:00:00Z', published: false,
-      training_theme: 'attacking',
+      training_themes: ['transition', 'attacking'],
     }
-    expect(rowToForm(row).theme).toBe('attacking')
-    expect(rowToForm({ ...row, training_theme: null }).theme).toBe('')
+    expect(rowToForm(row).themes).toEqual(['attacking', 'transition'])
+    expect(rowToForm({ ...row, training_themes: [] }).themes).toEqual([])
+    expect(trainingThemesFrom(['physical', 'Physical', 'physical', null])).toEqual(['physical'])
+    expect(trainingThemesFrom(null)).toEqual([])
   })
 })
 

@@ -1,10 +1,11 @@
 import { ALL_DRILLS_PATH, DRILLS_PATH, allDrillsPath } from '@/lib/training/library/paths'
 
-// A training's theme: one of the Coaching Session Catalogue's seven libraries,
-// picked on New event so the coach can find sessions for it in the catalogue.
+// A training's themes: any of the Coaching Session Catalogue's seven libraries,
+// picked on New event so the coach can find sessions for them in the catalogue.
+// TRAK-635 (Kostas, 28 Nov): none, one or several; tapping a picked one unpicks it.
 //
-// coach_calendar_events.training_theme stores the key, on trainings only. The
-// database enforces the same keys (coach_calendar_events_training_theme_known);
+// coach_calendar_events.training_themes stores the keys, on trainings only. The
+// database enforces the same keys (coach_calendar_events_training_themes_known);
 // change both together. `library` is the catalogue's own name, which its
 // ?lib= link selects; the counts are the catalogue's, and a test keeps them so.
 export const TRAINING_THEMES = [
@@ -22,6 +23,12 @@ export type TrainingTheme = (typeof TRAINING_THEMES)[number]['key']
 /** A stored value back as a theme key, or '' for none or anything unknown. */
 export function trainingThemeFrom(value: string | null | undefined): TrainingTheme | '' {
   return TRAINING_THEMES.find(t => t.key === value)?.key ?? ''
+}
+
+/** Stored values back as theme keys: known ones only, each once, in the order the seven are listed. */
+export function trainingThemesFrom(values: readonly (string | null)[] | null | undefined): TrainingTheme[] {
+  const picked = new Set(values ?? [])
+  return TRAINING_THEMES.filter(t => picked.has(t.key)).map(t => t.key)
 }
 
 /** The coach's Library, opened on a theme's library when there is one (TRAK-264: a theme's key is its library's address). */

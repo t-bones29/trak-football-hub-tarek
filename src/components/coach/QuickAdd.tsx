@@ -91,6 +91,8 @@ export function CoachCreate({ placement, onSaved }: { placement: 'bar' | 'top'; 
   const [kind, setKind] = useState<'training' | 'match'>('training')
   const [date, setDate] = useState(localTodayISO)
   const [time, setTime] = useState('')
+  // TRAK-635: a training needs its title here too.
+  const [title, setTitle] = useState('')
   const [opponent, setOpponent] = useState('')
   const [homeAway, setHomeAway] = useState<'' | 'home' | 'away'>('')
   const [error, setError] = useState<string | null>(null)
@@ -106,7 +108,7 @@ export function CoachCreate({ placement, onSaved }: { placement: 'bar' | 'top'; 
   const datePassed = pastDateProblem(date, localTodayISO())
   // TRAK-407: the date pickers name days and months in the language showing (English as before).
   const dates = currentLanguage() === 'en' ? 'en-GB' : currentLanguage()
-  const eventForm = (): EventForm => ({ ...blankForm(date), kind, time, opponent: kind === 'match' ? opponent : '', homeAway: kind === 'match' ? homeAway : '', squad })
+  const eventForm = (): EventForm => ({ ...blankForm(date), kind, time, title: kind === 'training' ? title : '', opponent: kind === 'match' ? opponent : '', homeAway: kind === 'match' ? homeAway : '', squad })
   const saveDraft = async () => {
     if (!user || saving) return
     const draft = eventForm()
@@ -119,7 +121,7 @@ export function CoachCreate({ placement, onSaved }: { placement: 'bar' | 'top'; 
       .insert([{ ...formToRow(draft), ...newDraftFields(user.id, squad) }]).select('id')
     setSaving(false)
     if (failed || !data?.length) { setError(clashMessage(failed) ?? t('coachSchedule:couldntSaveDraft')); return }
-    setTime(''); setOpponent(''); setHomeAway('')
+    setTime(''); setTitle(''); setOpponent(''); setHomeAway('')
     onSaved?.()
     close()
     toast.success(t('coachSchedule:draftSavedPublish'))
@@ -158,6 +160,8 @@ export function CoachCreate({ placement, onSaved }: { placement: 'bar' | 'top'; 
       <SegmentedControl label={t('nav:squad')} value={squad ?? ''} onValueChange={v => setSquadPick(v || null)}
         options={[...coachSquad.squads.map(s => ({ value: s, label: s })), { value: '', label: t('coachHome:allSquads') }]} />
     </div>}
+    {kind === 'training' && <input aria-label={t('coachSchedule:title')} value={title} onChange={e => { setTitle(e.target.value); setError(null) }}
+      placeholder={t('coachSchedule:trainingTitleExample')} className={field} />}
     {kind === 'match' && <>
       <input aria-label={t('coachSchedule:opponent')} value={opponent} onChange={e => { setOpponent(e.target.value); setError(null) }}
         placeholder={t('coachSchedule:opponent')} className={field} />

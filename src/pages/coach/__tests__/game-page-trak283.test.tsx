@@ -31,7 +31,7 @@ function game(kickOff: number, over: Record<string, unknown> = {}) {
     starts_at: new Date(kickOff).toISOString(), ends_at: new Date(kickOff + 90 * MINUTE).toISOString(),
     event_date: at.slice(0, 10), start_time: `${at.slice(11, 16)}:00`, end_time: null, meet_time: null,
     opponent: 'Parkview Athletic', home_away: 'home', venue: 'Rehearsal Park', kit: null, kit_snapshot: null,
-    family_note: 'Bring water', notes: null, series_id: null, training_theme: null, cancel_reason: null, ...over,
+    family_note: 'Bring water', notes: null, series_id: null, training_themes: [], cancel_reason: null, ...over,
   }
 }
 const soon = () => Math.ceil((Date.now() + 5 * DAY) / MINUTE) * MINUTE

@@ -85,7 +85,7 @@ const open = async (row: HTMLElement, name: RegExp) => {
 
 describe('TRAK-609: previews on the To-do', { timeout: 20_000 }, () => {
   it("today's training plan: each part, its drill and minutes, then the total; no View button", async () => {
-    home({ events: [event('t1', 'training', '2026-11-04T16:00', { training_theme: 'Pressing triggers' })],
+    home({ events: [event('t1', 'training', '2026-11-04T16:00', { training_themes: ['attacking', 'transition'] })],
       practices: [practice('t1', 1, 'Rondos 4v1', 15, 'Warm-up'), practice('t1', 2, 'Press on the back pass', 30, 'Main part')] })
     renderApp('/coach/home')
     const row = await rowOf("Today's training plan")
@@ -96,7 +96,7 @@ describe('TRAK-609: previews on the To-do', { timeout: 20_000 }, () => {
     expect(within(box).getByText('Warm-up')).toBeInTheDocument()
     expect(within(box).getByText('Main part')).toBeInTheDocument()
     expect(within(box).getByText('45 min')).toBeInTheDocument()
-    expect(within(box).getByText('Pressing triggers')).toBeInTheDocument()
+    expect(within(box).getByText('Attacking, Transition')).toBeInTheDocument()
     expect(within(row).getByRole('button', { name: /Hide plan/ })).toBeInTheDocument()
     expect(within(await todo()).queryByRole('button', { name: /^View/ })).toBeNull()
   })

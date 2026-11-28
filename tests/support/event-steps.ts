@@ -18,6 +18,9 @@ const current = (sheet: HTMLElement): number => {
 export async function eventStep(sheet: HTMLElement, step: EventStep) {
   const target = STEPS.indexOf(step)
   for (let guard = 0; guard < STEPS.length && current(sheet) !== target; guard++) {
+    // TRAK-635: a training needs its title before Next, so walking on names it as it used to show.
+    const title = current(sheet) < target ? within(sheet).queryByLabelText('Title', { exact: true }) : null
+    if (title instanceof HTMLInputElement && !title.value) await userEvent.type(title, 'Training')
     await userEvent.click(current(sheet) < target
       ? within(sheet).getByRole('button', { name: 'Next' })
       : within(sheet).getByRole('button', { name: /^Back to / }))

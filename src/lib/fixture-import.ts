@@ -22,7 +22,8 @@ export const FIXTURE_IMPORT_ENABLED = false
 export function fixtureToForm(fixture: Fixture): EventForm {
   return {
     kind: fixture.kind,
-    title: '',
+    // TRAK-635: a training needs a title and a CSV row has none, so it is named as it always showed.
+    title: fixture.kind === 'training' ? 'Training' : '',
     date: fixture.date,
     time: fixture.kickoff ?? '',
     duration: 90,
@@ -32,7 +33,7 @@ export function fixtureToForm(fixture: Fixture): EventForm {
     homeAway: fixture.homeAway ?? '',
     kit: fixture.kit ?? '',
     familyNote: '',
-    theme: '',
+    themes: [],
     competition: '',
   }
 }

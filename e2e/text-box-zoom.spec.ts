@@ -72,6 +72,8 @@ test.describe('TRAK-178 on a phone', () => {
     await expect(sheet).toBeVisible()
     // TRAK-182: one step per screen, so each step's boxes are measured on it.
     const eventForm = await boxSizes(page)
+    // TRAK-635: a training needs its title before Next.
+    await sheet.getByLabel('Title', { exact: true }).fill('Finishing')
     await sheet.getByRole('button', { name: 'Next' }).click()
     await sheet.getByRole('button', { name: /^Start\b/ }).click()
     await page.getByRole('listbox').getByRole('option', { name: '17:00' }).click()

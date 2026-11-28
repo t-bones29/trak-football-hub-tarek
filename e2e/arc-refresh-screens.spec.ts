@@ -293,6 +293,8 @@ test.describe('TRAK-182 coach screens', () => {
     const listBox = await list.boundingBox()
     expect(listBox!.y).toBeGreaterThanOrEqual(0)
     await list.getByRole('option', { name: '17:00' }).click()
+    // TRAK-635: a training needs its title, here as in the full form.
+    await form.getByLabel('Title', { exact: true }).fill('Finishing')
     await form.getByRole('button', { name: 'Save draft' }).click()
     await expect(page.getByText('Draft saved. Publish it from Events.')).toBeVisible()
     await page.waitForTimeout(300)
@@ -634,6 +636,8 @@ test.describe('TRAK-227 date and time pickers in the event form', () => {
     await page.goto('/coach/schedule')
     await openNewEvent(page)
     const sheet = page.getByRole('dialog', { name: 'New event' })
+    // TRAK-635: a training needs its title before Next.
+    await sheet.getByLabel('Title', { exact: true }).fill('Finishing')
     await sheet.getByRole('button', { name: 'Next', exact: true }).click()
     // Fully inside every scroll area it sits in, and inside the screen.
     const fullyVisible = (panel: import('@playwright/test').Locator) => panel.evaluate(el => {

@@ -26,7 +26,7 @@ function game() {
     id: 'g1', coach_user_id: COACH.id, squad: 'U16', title: 'vs Synthetic United', event_type: 'match', published: true, status: 'scheduled',
     starts_at: at, ends_at: new Date(kickOff + 90 * MINUTE).toISOString(), event_date: at.slice(0, 10), start_time: `${at.slice(11, 16)}:00`,
     end_time: null, meet_time: null, opponent: 'Synthetic United', home_away: 'home', venue: 'Synthetic Park', kit: null, kit_snapshot: null,
-    family_note: null, notes: null, series_id: null, training_theme: null, cancel_reason: null,
+    family_note: null, notes: null, series_id: null, training_themes: [], cancel_reason: null,
   }
 }
 

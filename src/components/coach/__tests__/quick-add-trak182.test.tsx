@@ -117,9 +117,14 @@ describe('TRAK-182: the quick-add button', { timeout: 20_000 }, () => {
     expect(within(form).getByRole('alert')).toHaveTextContent('Select a start time')
     expect(inserted).toEqual([])
     await pickTime(userEvent, 'Start', '17:30')
+    // TRAK-635: a training needs its title, here as in the full form.
+    await userEvent.click(within(form).getByRole('button', { name: 'Save draft' }))
+    expect(within(form).getByRole('alert')).toHaveTextContent('Give the training a title')
+    expect(inserted).toEqual([])
+    await userEvent.type(within(form).getByLabelText('Title'), 'Finishing in the box')
     await userEvent.click(within(form).getByRole('button', { name: 'Save draft' }))
     await waitFor(() => expect(inserted).toHaveLength(1))
-    expect(inserted[0]).toMatchObject({ coach_user_id: COACH.id, event_type: 'training', published: false, start_time: '17:30:00', event_date: localTodayISO() })
+    expect(inserted[0]).toMatchObject({ coach_user_id: COACH.id, event_type: 'training', published: false, start_time: '17:30:00', event_date: localTodayISO(), title: 'Finishing in the box' })
     expect(await screen.findByText('Draft saved. Publish it from Events.')).toBeInTheDocument()
     // The form closes; the "+" is back.
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'New event' })).toBeNull())

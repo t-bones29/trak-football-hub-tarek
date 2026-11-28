@@ -17,7 +17,7 @@ const MATCH = {
   starts_at: new Date(starts).toISOString(), ends_at: new Date(starts + 90 * MINUTE).toISOString(), event_date: date,
   start_time: '11:00:00', end_time: null, meet_time: null, opponent: 'Synthetic Rovers U16', home_away: 'home',
   venue: 'Rehearsal Park', kit: null, kit_snapshot: null, family_note: null, notes: null, series_id: null,
-  training_theme: null, cancel_reason: null, source: 'manual', organization_id: 'org-358',
+  training_themes: [], cancel_reason: null, source: 'manual', organization_id: 'org-358',
 }
 // Fourteen in the squad: two keepers, four defenders, five midfielders, three attackers. Attacker 14's family said
 // they can't make it.

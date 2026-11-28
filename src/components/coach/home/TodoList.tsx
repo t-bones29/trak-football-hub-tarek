@@ -88,7 +88,7 @@ export function TodoList({ items, failed, onRetry, coachId, showSquad, onChanged
               ? <OwnEventLine row={row} coachId={coachId} onChanged={onChanged} />
               : <span className="text-sm text-ink-2">{[showSquad && todo.kind !== 'own' ? squadName(todo.squad) : null, line(todo, row, t)].filter(Boolean).join(' · ')}</span>}
             {row && previewOf(todo) && <PreviewToggle kind={previewOf(todo)!} open={open.has(todo.key)} onToggle={() => toggle(todo.key)} />}
-            {row && previewOf(todo) && open.has(todo.key) && <TodoPreview kind={previewOf(todo)!} eventId={row.id} theme={row.training_theme ?? null} />}
+            {row && previewOf(todo) && open.has(todo.key) && <TodoPreview kind={previewOf(todo)!} eventId={row.id} themes={row.training_themes ?? []} />}
           </span>
           <span className="col-start-2 laptop:col-start-auto">{ordering && onMove
             ? <OrderButtons name={title(todo, row, t)} first={index === 0} last={index === items.length - 1} onMove={by => onMove(todo.key, by)}

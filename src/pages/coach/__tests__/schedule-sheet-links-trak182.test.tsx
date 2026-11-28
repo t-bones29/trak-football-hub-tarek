@@ -44,7 +44,7 @@ describe('TRAK-182: Schedule opens what the event sheet asked for', () => {
     renderApp('/coach/schedule?edit=one-1')
     const sheet = await screen.findByRole('dialog', { name: 'Edit event' })
     // An edit opens on its first step, filled in (TRAK-182, live run 3).
-    expect(within(sheet).getByLabelText('Title (Optional)')).toHaveValue('Finishing')
+    expect(within(sheet).getByLabelText('Title', { exact: true })).toHaveValue('Finishing')
   })
 
   it('asks this week or the following for a series\' ?publish=<id>', async () => {

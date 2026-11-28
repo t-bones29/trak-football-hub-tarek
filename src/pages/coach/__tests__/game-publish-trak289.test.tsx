@@ -32,7 +32,7 @@ function game(over: Record<string, unknown> = {}) {
     starts_at: new Date(kickOff).toISOString(), ends_at: new Date(kickOff + 90 * MINUTE).toISOString(), created_at: '2026-10-20T08:00:00Z',
     event_date: at.slice(0, 10), start_time: at.slice(11, 19), end_time: null, meet_time: null, competition: 'league',
     opponent: 'Parkview Athletic', home_away: 'home', venue: 'Rehearsal Park', kit: null, kit_snapshot: null,
-    family_note: null, notes: null, series_id: null, training_theme: null, cancel_reason: null, ...over,
+    family_note: null, notes: null, series_id: null, training_themes: [], cancel_reason: null, ...over,
   }
 }
 const child = (id: string, name: string, shirt: number) =>

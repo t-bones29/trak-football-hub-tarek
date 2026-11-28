@@ -404,10 +404,10 @@ BEGIN
   SET LOCAL ROLE authenticated;
   PERFORM set_config('request.jwt.claims', json_build_object('role', 'authenticated', 'sub', v_coach)::text, true);
   INSERT INTO public.coach_calendar_events (id, coach_user_id, title, event_type, starts_at, ends_at, event_date, start_time, end_time,
-                                            venue, published, squad, training_theme)
+                                            venue, published, squad, training_themes)
   VALUES (v_training, v_coach, 'U10 training', 'training',
           '2026-10-22 17:00+04', '2026-10-22 18:30+04', '2026-10-22', '17:00', '18:30',
-          'Rehearsal FC, pitch 2', true, 'U10', 'technical')
+          'Rehearsal FC, pitch 2', true, 'U10', ARRAY['technical'])
   ON CONFLICT (id) DO NOTHING;
   INSERT INTO public.coach_calendar_events (id, coach_user_id, title, event_type, starts_at, ends_at, event_date, start_time, end_time,
                                             venue, opponent, home_away, meet_time, published, squad)

@@ -18,7 +18,7 @@ function match(id: string, squad: string | null, days: number, hhmm: string, ove
     starts_at: new Date(starts).toISOString(), ends_at: new Date(starts + 90 * MINUTE).toISOString(), event_date: date,
     start_time: `${hhmm}:00`, end_time: null, meet_time: null, opponent: 'Synthetic Rovers U16', home_away: 'home',
     venue: 'Rehearsal Park', kit: 'Blue shirts', kit_snapshot: null, family_note: 'Bring water', notes: null, series_id: null,
-    training_theme: null, cancel_reason: null, source: 'manual', organization_id: 'org-283', ...over,
+    training_themes: [], cancel_reason: null, source: 'manual', organization_id: 'org-283', ...over,
   }
 }
 const MATCHES = [

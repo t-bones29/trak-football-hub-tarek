@@ -34,7 +34,7 @@ function game(ms = 5 * DAY) {
     starts_at: new Date(kickOff).toISOString(), ends_at: new Date(kickOff + 90 * MINUTE).toISOString(),
     event_date: at.slice(0, 10), start_time: `${at.slice(11, 19)}`, end_time: null, meet_time: null,
     opponent: 'Synthetic Rovers', home_away: 'home', venue: 'Rehearsal Park', kit: null, kit_snapshot: null,
-    family_note: null, notes: null, series_id: null, training_theme: null, cancel_reason: null,
+    family_note: null, notes: null, series_id: null, training_themes: [], cancel_reason: null,
   }
 }
 const child = (id: string, name: string, shirt: number, position: string) =>

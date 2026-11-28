@@ -76,20 +76,24 @@ export function Field({ label, children }: { label: string; children: ReactNode 
   )
 }
 
-/** A training's theme: the catalogue's seven libraries, and a link into it. */
-function ThemeChoice({ theme, onChange }: { theme: TrainingTheme | ''; onChange: (theme: TrainingTheme) => void }) {
+/** A training's themes: the catalogue's seven libraries, and a link into them. TRAK-635 (Kostas, 28 Nov): any number,
+    and tapping a picked one unpicks it. */
+function ThemeChoice({ themes, onChange }: { themes: TrainingTheme[]; onChange: (themes: TrainingTheme[]) => void }) {
   const { t } = useTranslation()
-  const picked = TRAINING_THEMES.find(option => option.key === theme)
+  // One theme: its own drills, as before. None or several: all of them.
+  const only = themes.length === 1 ? themes[0] : ''
   // TRAK-419: where Training is on, the link opens Training › Drills, and the old catalogue's counts go (they are not
   // Drills' counts). Where it is off, the old Library, as before.
   const drills = useFeature('training')
-  const themeName = picked ? t(THEME_WORD[picked.key]) : ''
+  const themeName = only ? t(THEME_WORD[only]) : ''
+  const toggle = (key: TrainingTheme) =>
+    onChange(TRAINING_THEMES.map(option => option.key).filter(k => k === key ? !themes.includes(k) : themes.includes(k)))
   return (
     <div className="space-y-2">
       <span id="training-theme" className="block text-[9px] tracking-[0.1em] uppercase text-ink-3" style={mono}>{t('coachSchedule:themeOptional')}</span>
-      <div role="radiogroup" aria-labelledby="training-theme" className="grid grid-cols-2 gap-2">
+      <div role="group" aria-labelledby="training-theme" className="grid grid-cols-2 gap-2">
         {TRAINING_THEMES.map(option => {
-          const on = option.key === theme
+          const on = themes.includes(option.key)
           return (
             <label key={option.key} className="flex items-start gap-2 rounded-xl px-3 py-2 cursor-pointer transition-colors"
               style={{
@@ -97,7 +101,7 @@ function ThemeChoice({ theme, onChange }: { theme: TrainingTheme | ''; onChange:
                 border: `1px solid ${on ? withAlpha(EVENT_COLOR.training, 0.33) : 'rgb(var(--t-line))'}`,
                 ...font,
               }}>
-              <input type="radio" name="training-theme" value={option.key} checked={on} onChange={() => onChange(option.key)}
+              <input type="checkbox" name="training-theme" value={option.key} checked={on} onChange={() => toggle(option.key)}
                 className="mt-[2px] w-3.5 h-3.5 shrink-0" style={{ accentColor: EVENT_COLOR.training }} />
               <span className="min-w-0">
                 <span className={`block text-[13px] leading-tight text-ink ${on ? 'font-medium' : ''}`}>{t(THEME_WORD[option.key])}</span>
@@ -108,11 +112,11 @@ function ThemeChoice({ theme, onChange }: { theme: TrainingTheme | ''; onChange:
         })}
       </div>
       {/* A new tab, so the event being set up stays as it is. */}
-      <a href={drills ? drillsLink(theme) : catalogueLink(theme)} target="_blank" rel="noopener"
+      <a href={drills ? drillsLink(only) : catalogueLink(only)} target="_blank" rel="noopener"
         className="inline-flex items-center gap-1.5 text-[12px] text-brand" style={font}>
         {drills
-          ? picked ? t('coachSchedule:findThemeDrills', { theme: themeName }) : t('coachSchedule:browseAllDrills')
-          : picked ? t('coachSchedule:findThemeSessions', { theme: themeName }) : t('coachSchedule:browseAllSessions')}
+          ? only ? t('coachSchedule:findThemeDrills', { theme: themeName }) : t('coachSchedule:browseAllDrills')
+          : only ? t('coachSchedule:findThemeSessions', { theme: themeName }) : t('coachSchedule:browseAllSessions')}
         <ExternalLink size={12} aria-hidden />
       </a>
     </div>
@@ -253,7 +257,7 @@ export function EventEditSheet({ sheet, onChange, onClose, onSave, saving, venue
           )}
 
           {sheet.form.kind === 'training' && (
-            <ThemeChoice theme={sheet.form.theme} onChange={theme => setForm({ theme })} />
+            <ThemeChoice themes={sheet.form.themes} onChange={themes => setForm({ themes })} />
           )}
 
           {sheet.form.kind === 'match' && (
@@ -271,9 +275,10 @@ export function EventEditSheet({ sheet, onChange, onClose, onSave, saving, venue
             </>
           )}
 
-          <Field label={sheet.form.kind === 'other' ? t('coachSchedule:whatIsIt') : t('coachSchedule:titleOptional')}>
+          {/* TRAK-635: a training's title is required; a match's is optional, as it has "vs Opponent". */}
+          <Field label={sheet.form.kind === 'other' ? t('coachSchedule:whatIsIt') : sheet.form.kind === 'training' ? t('coachSchedule:title') : t('coachSchedule:titleOptional')}>
             <input value={sheet.form.title} onChange={e => setForm({ title: e.target.value })}
-              placeholder={sheet.form.kind === 'match' ? t('coachSchedule:vsOpponent', { opponent: sheet.form.opponent || t('coachSchedule:opponent') }) : sheet.form.kind === 'training' ? t('coachSchedule:kindTraining') : t('coachSchedule:titleExampleOther')}
+              placeholder={sheet.form.kind === 'match' ? t('coachSchedule:vsOpponent', { opponent: sheet.form.opponent || t('coachSchedule:opponent') }) : sheet.form.kind === 'training' ? t('coachSchedule:trainingTitleExample') : t('coachSchedule:titleExampleOther')}
               className={inputClass} style={font} />
           </Field>
 

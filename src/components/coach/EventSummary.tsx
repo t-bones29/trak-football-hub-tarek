@@ -1,6 +1,5 @@
 import { KitAnnouncement } from '@/components/trak/kits/KitAnnouncement'
 import { describeEventKit } from '@/lib/kit-templates'
-import { TRAINING_THEMES } from '@/lib/training-theme'
 import { splitVenue } from '@/lib/venue-link'
 import { eventTitle, formatEventDay, repeatProblem, type EventForm, type Repeat } from '@/lib/coach-events'
 import { KIND_WORD, THEME_WORD, WEEKDAY_WORD } from '@/lib/event-edit'
@@ -19,11 +18,12 @@ export function EventSummary({ form, repeat, noteProblem, squad }: {
 }) {
   const { t } = useTranslation()
   const notSet = t('coachSchedule:notSet')
-  const themeKey = TRAINING_THEMES.find(option => option.key === form.theme)?.key
+  // TRAK-635: every picked theme, in the order the seven are listed.
+  const themeWords = form.themes.map(key => t(THEME_WORD[key])).join(', ')
   const rows: [string, string][] = [
     ...(squad ? [[t('nav:squad'), squad] as [string, string]] : []),
     [t('coachSchedule:summaryType'), t(KIND_WORD[form.kind])],
-    ...(form.kind === 'training' ? [[t('coachSchedule:theme'), themeKey ? t(THEME_WORD[themeKey]) : notSet] as [string, string]] : []),
+    ...(form.kind === 'training' ? [[t(form.themes.length > 1 ? 'coachSchedule:themes' : 'coachSchedule:theme'), themeWords || notSet] as [string, string]] : []),
     ...(form.kind === 'match' ? [[t('coachSchedule:opponent'), form.opponent.trim() + (form.homeAway ? ` (${form.homeAway === 'home' ? t('coachSchedule:home') : t('coachSchedule:away')})` : '')] as [string, string]] : []),
     [t('coachSchedule:summaryTitle'), eventTitle(form)],
     // TRAK-255: the name, and whether it has a map link; never the link itself.

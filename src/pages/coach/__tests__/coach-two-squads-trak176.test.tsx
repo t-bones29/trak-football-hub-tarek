@@ -112,6 +112,7 @@ describe('TRAK-176: one coach, two squads', { timeout: 20_000 }, () => {
     await userEvent.click(within(menu).getByRole('menuitem', { name: 'New event' }))
     const form = await screen.findByRole('dialog', { name: 'New event' })
     await pickTime(userEvent, 'Start', '17:30')
+    await userEvent.type(within(form).getByLabelText('Title'), 'Training')
     await userEvent.click(within(form).getByRole('button', { name: 'Save draft' }))
     await waitFor(() => expect(inserted).toHaveLength(1))
     expect(inserted[0]).toMatchObject({ coach_user_id: COACH.id, squad: 'U16', published: false })

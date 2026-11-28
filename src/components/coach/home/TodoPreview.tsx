@@ -4,6 +4,8 @@ import { LoadingSkeleton } from '@/components/trak/LoadingSkeleton'
 import { useGameEvaluation, useGamePlan, useGamePlayers } from '@/components/coach/games/useGames'
 import { useHere, useNotes, usePlan, useRegisters } from '@/components/coach/training/useTraining'
 import { fromSaved, plannedMinutes, practiceLine } from '@/lib/training/plans'
+import { THEME_WORD } from '@/lib/event-edit'
+import { trainingThemesFrom } from '@/lib/training-theme'
 import { useTranslation } from '@/lib/i18n'
 
 /* TRAK-609 (New Home 3/8, spec TRAK-606): a to-do's Preview dropdown, in place of a View button (Kostas, 26 Nov). It
@@ -12,8 +14,8 @@ import { useTranslation } from '@/lib/i18n'
 
 export type PreviewKind = 'training-plan' | 'match-plan' | 'notes' | 'evaluation'
 
-export function TodoPreview({ kind, eventId, theme }: { kind: PreviewKind; eventId: string; theme?: string | null }) {
-  if (kind === 'training-plan') return <TrainingPlan eventId={eventId} theme={theme ?? null} />
+export function TodoPreview({ kind, eventId, themes }: { kind: PreviewKind; eventId: string; themes?: readonly string[] }) {
+  if (kind === 'training-plan') return <TrainingPlan eventId={eventId} themes={themes ?? []} />
   if (kind === 'match-plan') return <MatchPlan eventId={eventId} />
   if (kind === 'notes') return <Notes eventId={eventId} />
   return <Evaluation eventId={eventId} />
@@ -35,15 +37,17 @@ function Waiting({ query, what }: { query: { isError: boolean; refetch: () => un
     : <LoadingSkeleton label={t('coachHome:previewLoading')} lines={2} className="mt-2 max-w-[460px] rounded-xl bg-raised p-3" />
 }
 
-function TrainingPlan({ eventId, theme }: { eventId: string; theme: string | null }) {
+function TrainingPlan({ eventId, themes }: { eventId: string; themes: readonly string[] }) {
   const { t } = useTranslation()
+  // TRAK-635: the training's themes in words, not their stored keys.
+  const themeWords = trainingThemesFrom(themes).map(key => t(THEME_WORD[key])).join(', ')
   const plan = usePlan(eventId)
   if (!plan.data) return <Waiting query={plan} what={t('coachHome:planWhat')} />
   const practices = fromSaved(plan.data.practices)
   return <Box label={t('coachHome:previewPlan')}>
     {practices.map((practice, i) => <Row key={i} name={practice.part || t('coachHome:previewPart', { n: i + 1 })} value={practice.part ? practice.name : practiceLine(practice)}
       end={t('coachHome:minutes', { count: practice.minutes })} />)}
-    <Row name={t('coachHome:previewTotal')} value={<span className="text-ink-3">{theme ?? ''}</span>} end={t('coachHome:minutes', { count: plannedMinutes(practices) })} />
+    <Row name={t('coachHome:previewTotal')} value={<span className="text-ink-3">{themeWords}</span>} end={t('coachHome:minutes', { count: plannedMinutes(practices) })} />
   </Box>
 }
 

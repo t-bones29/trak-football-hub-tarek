@@ -30,7 +30,7 @@ const match = () => ({
   id: 'g1', coach_user_id: COACH.id, squad: 'U16', title: 'vs Parkview Athletic', event_type: 'match', published: true, status: 'scheduled',
   starts_at: '2026-11-07T06:00:00Z', ends_at: '2026-11-07T07:30:00Z', event_date: '2026-11-07', start_time: '10:00:00', end_time: null,
   meet_time: null, opponent: 'Parkview Athletic', home_away: 'home', venue: 'Rehearsal Park', kit: null, kit_snapshot: null,
-  family_note: null, notes: null, series_id: null, training_theme: null, cancel_reason: null, competition: 'league',
+  family_note: null, notes: null, series_id: null, training_themes: [], cancel_reason: null, competition: 'league',
 })
 const child = (id: string, name: string, shirt: number) =>
   ({ id, coach_user_id: COACH.id, player_name: name, age_group: 'U16', status: 'active', shirt_number: shirt, position: 'Midfielder', created_at: '2026-10-01T08:00:00Z' })

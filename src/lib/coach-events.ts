@@ -9,7 +9,7 @@
  */
 import { calendarFields, displayEventTime, toAcademyInstant, toInstant } from '@/lib/event-time'
 import { describeEventKit, readKitSnapshot, type EventKitSnapshot } from '@/lib/kit-templates'
-import { trainingThemeFrom, type TrainingTheme } from '@/lib/training-theme'
+import { trainingThemesFrom, type TrainingTheme } from '@/lib/training-theme'
 import { currentLanguage, i18n } from '@/lib/i18n'
 import { splitVenue } from '@/lib/venue-link'
 
@@ -63,8 +63,8 @@ export type EventForm = {
   kitSnapshot?: EventKitSnapshot | null
   /** TRAK-161: what families read under Kit; '' for none. Not the coach-only notes. */
   familyNote: string
-  /** A training's catalogue theme; '' for none. Coach-only. */
-  theme: TrainingTheme | ''
+  /** TRAK-635: a training's catalogue themes, none, one or several. Coach-only. */
+  themes: TrainingTheme[]
   /** Imad, 24 Oct: a new event's squad, chosen in the form; null is the whole roster, undefined the squad last picked. */
   squad?: string | null
   /** TRAK-288: a match's competition, asked in New event where Games is on (Imad, 28 Oct); '' when not asked. */
@@ -104,12 +104,12 @@ export type EventRow = {
   status?: string | null
   cancel_reason?: string | null
   series_id?: string | null
-  training_theme?: string | null
+  training_themes?: string[] | null
   competition?: string | null
 }
 
 export function blankForm(date: string): EventForm {
-  return { kind: 'training', title: '', date, time: '', duration: 90, venue: '', meetTime: '', opponent: '', homeAway: '', kit: '', kitSnapshot: null, familyNote: '', theme: '', competition: '' }
+  return { kind: 'training', title: '', date, time: '', duration: 90, venue: '', meetTime: '', opponent: '', homeAway: '', kit: '', kitSnapshot: null, familyNote: '', themes: [], competition: '' }
 }
 
 const minutes = (hhmm: string) => {
@@ -128,6 +128,8 @@ export function opponentName(typed: string): string {
 export function whatProblem(form: EventForm): string | null {
   if (form.kind === 'match' && !opponentName(form.opponent)) return i18n.t('coachSchedule:problemOpponent')
   if (form.kind === 'other' && !form.title.trim()) return i18n.t('coachSchedule:problemWhat')
+  // TRAK-635 (Kostas, 28 Nov): a training is named by the coach; a match still has its "vs Opponent".
+  if (form.kind === 'training' && !form.title.trim()) return i18n.t('coachSchedule:problemTrainingTitle')
   return null
 }
 
@@ -204,7 +206,7 @@ export function formToRow(form: EventForm) {
     kit: form.kitSnapshot ? describeEventKit(form.kitSnapshot) : form.kit.trim() || null,
     kit_snapshot: form.kitSnapshot ? readKitSnapshot(form.kitSnapshot) : null,
     family_note: form.familyNote.trim() || null,
-    training_theme: form.kind === 'training' && form.theme ? form.theme : null,
+    training_themes: form.kind === 'training' ? form.themes : [],
     // TRAK-288: only when picked, so an academy without Games sends what it always has.
     ...(isMatch && form.competition && { competition: form.competition }),
   }
@@ -217,7 +219,8 @@ export function rowToForm(row: EventRow): EventForm {
   const duration = row.ends_at && time
     ? Math.round((new Date(row.ends_at).getTime() - new Date(row.starts_at).getTime()) / 60_000)
     : 90
-  const autoTitle = kind === 'match' ? `vs ${row.opponent ?? ''}` : kind === 'training' ? 'Training' : ''
+  // TRAK-635: a training's title is the coach's own, so it comes back as saved (an old one says "Training").
+  const autoTitle = kind === 'match' ? `vs ${row.opponent ?? ''}` : ''
   return {
     kind,
     title: row.title === autoTitle ? '' : row.title,
@@ -231,7 +234,7 @@ export function rowToForm(row: EventRow): EventForm {
     kit: row.kit ?? '',
     kitSnapshot: readKitSnapshot(row.kit_snapshot),
     familyNote: row.family_note ?? '',
-    theme: trainingThemeFrom(row.training_theme),
+    themes: trainingThemesFrom(row.training_themes),
     competition: COMPETITIONS.find(c => c.value === row.competition)?.value ?? '',
   }
 }

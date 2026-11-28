@@ -240,6 +240,8 @@ test('TRAK-427: New event on a laptop is a centred pop-up that stays put between
   await page.waitForTimeout(300)
   await page.screenshot({ path: testInfo.outputPath('new-event-laptop-step1.png') })
   const first = (await dialog.boundingBox())!
+  // TRAK-635: a training needs its title before Next.
+  await dialog.getByLabel('Title', { exact: true }).fill('Finishing')
   await dialog.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(dialog.getByRole('button', { name: /^Back to / })).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('new-event-laptop-step2.png') })

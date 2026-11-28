@@ -392,7 +392,7 @@ export type Database = {
           kit: string | null
           kit_snapshot: Json | null
           family_note: string | null
-          training_theme: string | null
+          training_themes: string[]
           meet_time: string | null
           notes: string | null
           opponent: string | null
@@ -423,7 +423,7 @@ export type Database = {
           kit?: string | null
           kit_snapshot?: Json | null
           family_note?: string | null
-          training_theme?: string | null
+          training_themes?: string[]
           meet_time?: string | null
           notes?: string | null
           opponent?: string | null
@@ -454,7 +454,7 @@ export type Database = {
           kit?: string | null
           kit_snapshot?: Json | null
           family_note?: string | null
-          training_theme?: string | null
+          training_themes?: string[]
           meet_time?: string | null
           notes?: string | null
           opponent?: string | null
