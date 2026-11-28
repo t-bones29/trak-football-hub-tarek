@@ -63,8 +63,8 @@ SELECT pg_temp.t294check(pg_temp.t294refused(format('INSERT INTO public.academy_
   pg_temp.t294id(100),'trainings'),'23514'),'1 a misspelt name is still refused, not silently off');
 INSERT INTO public.academy_features(organization_id,feature) VALUES(pg_temp.t294id(100),'training');
 INSERT INTO public.organizations(id,admin_user_id,name,join_code) VALUES(pg_temp.t294id(102),pg_temp.t294id(3),'New Academy','T294W1');
-SELECT pg_temp.t294check((SELECT array_agg(feature ORDER BY feature) FROM public.academy_features WHERE organization_id=pg_temp.t294id(102))=ARRAY['events','family_look','games','season_plan','tasks','training'],
-  '1 a new academy starts with events, Games, Training, the new look, Season plan and tasks on');
+SELECT pg_temp.t294check((SELECT array_agg(feature ORDER BY feature) FROM public.academy_features WHERE organization_id=pg_temp.t294id(102))=ARRAY['announcements','events','family_look','games','season_plan','tasks','training'],
+  '1 a new academy starts with events, Games, Training, the new look, Season plan, tasks and announcements on');
 
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.t294actor(10);

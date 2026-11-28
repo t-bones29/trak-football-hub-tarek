@@ -59,8 +59,8 @@ INSERT INTO public.academy_features(organization_id,feature) VALUES(pg_temp.g283
 SELECT pg_temp.g283check(EXISTS(SELECT 1 FROM public.academy_features WHERE organization_id=pg_temp.g283id(100) AND feature='games'),
   '1 the operator switches Games on with one row');
 INSERT INTO public.organizations(id,admin_user_id,name,join_code) VALUES(pg_temp.g283id(102),pg_temp.g283id(3),'New Academy','G283W1');
-SELECT pg_temp.g283check((SELECT array_agg(feature ORDER BY feature) FROM public.academy_features WHERE organization_id=pg_temp.g283id(102))=ARRAY['events','family_look','games','season_plan','tasks','training'],
-  '1 a new academy starts with events, Games, Training, the new look, Season plan and tasks on');
+SELECT pg_temp.g283check((SELECT array_agg(feature ORDER BY feature) FROM public.academy_features WHERE organization_id=pg_temp.g283id(102))=ARRAY['announcements','events','family_look','games','season_plan','tasks','training'],
+  '1 a new academy starts with events, Games, Training, the new look, Season plan, tasks and announcements on');
 
 -- ── 2. Who gets Games ──────────────────────────────────────────────────────
 SET LOCAL ROLE authenticated;

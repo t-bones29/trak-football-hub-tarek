@@ -74,8 +74,9 @@ INSERT INTO public.squad_players(id,coach_user_id,player_name,age_group,linked_p
  (pg_temp.t602id(46),pg_temp.t602id(10),'Synthetic Player Leo','U16',pg_temp.t602id(26)),
  (pg_temp.t602id(47),pg_temp.t602id(10),'Synthetic Player Zoe','U14',pg_temp.t602id(27)),
  (pg_temp.t602id(44),pg_temp.t602id(12),'Synthetic Player Max','U16',pg_temp.t602id(24));
--- Academies start with tasks on (20261128200000). This suite switches it by hand, as an operator still can.
-DELETE FROM public.academy_features WHERE feature = 'tasks';
+-- Academies start with tasks (20261128200000) and announcements (20261128210000) on. This suite switches them by hand,
+-- as an operator still can.
+DELETE FROM public.academy_features WHERE feature IN ('tasks', 'announcements');
 INSERT INTO public.academy_features(organization_id,feature)
  SELECT o, f FROM unnest(ARRAY[pg_temp.t602id(100),pg_temp.t602id(101)]) o, unnest(ARRAY['tasks','announcements']) f;
 SELECT pg_temp.t602check((SELECT count(*) FROM public.squad_players
